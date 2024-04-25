@@ -1,22 +1,43 @@
-/** @jsxImportSource frog/jsx */
+/** @jsxImportSource @airstack/frog/jsx */
 
-import { Button, Frog, TextInput } from 'frog'
-import { devtools } from 'frog/dev'
-// import { neynar } from 'frog/hubs'
-import { handle } from 'frog/next'
-import { serveStatic } from 'frog/serve-static'
+import { isFarcasterUserParticipantOfWorkChannel } from '@/app/utils/fc-allowed-list'
+import { Button, Frog, TextInput } from '@airstack/frog'
+import { devtools } from '@airstack/frog/dev'
+import { handle } from '@airstack/frog/next'
+import { serveStatic } from '@airstack/frog/serve-static'
 
 const app = new Frog({
   assetsPath: '/',
   basePath: '/api',
-  // Supply a Hub to enable frame verification.
-  // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
+  apiKey: process.env.AIRSTACK_API_KEY as string,
 })
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
 
-app.frame('/', (c) => {
+app.frame("/", async (c) => {
+  const { buttonValue, inputText, status } = c
+  console.log('frames.c', { c, buttonValue, inputText, })
+  const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(c.frameData?.fid ?? 1, "work")
+
+  return c.res({
+    image: (
+      <div
+        style={{
+          color: "white",
+          display: "flex",
+          fontSize: 40,
+        }}
+      >
+        {status === "initial" ? "Create your Covariance profile" : isParticipantOfWork ? "You can now create your profile" : "Sorry, you are not allowed to create a Covariance profile"
+        }
+      </div>
+    ),
+    intents: [status === "initial" && <Button>Click Here</Button>],
+  });
+});
+
+app.frame('/old', (c) => {
   const { buttonValue, inputText, status } = c
   const fruit = inputText || buttonValue
   return c.res({
