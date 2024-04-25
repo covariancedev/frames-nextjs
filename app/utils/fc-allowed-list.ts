@@ -35,9 +35,15 @@ export async function isFarcasterUserParticipantOfWorkChannel(
     return false;
   } // throw new Error(error);
 
-  const found=data?.find((participant) => participant.fid === fid.toString());
-  console.log("isFarcasterUserParticipantOfWorkChannel", {  found });
-return !!found}
+  const found = data?.find(
+    (participant) =>
+      // participant.profileName!.toLowerCase().startsWith("wapt")
+      //   );
+      participant.fid === fid.toString()
+  );
+  console.log("isFarcasterUserParticipantOfWorkChannel", { found });
+  return !!found;
+}
 
 export async function getFarcasterUserAllowedList(fid: number) {
   const allowListCriteria = {
