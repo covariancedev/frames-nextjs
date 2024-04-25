@@ -35,8 +35,9 @@ export async function isFarcasterUserParticipantOfWorkChannel(
     return false;
   } // throw new Error(error);
 
-  return !!data?.find((participant) => participant.fid === fid.toString());
-}
+  const found=data?.find((participant) => participant.fid === fid.toString());
+  console.log("isFarcasterUserParticipantOfWorkChannel", {  found });
+return !!found}
 
 export async function getFarcasterUserAllowedList(fid: number) {
   const allowListCriteria = {

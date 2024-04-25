@@ -31,7 +31,7 @@ app.frame("/", async (c) => {
           fontSize: 40,
         }}
       >
-        {status === "initial" ? "Create your Covariance profile" : isParticipantOfWork ? "You can now create your profile" : `Sorry, you are not allowed to create a Covariance profile. Your fid is ${fid}`
+        {status === "initial" ? "Create your Covariance profile" : isParticipantOfWork ? "You can now create your profile" : `Sorry, you are not allowed to create a Covariance profile because you do not belong to /work channel. Your fid is ${fid}`
         }
       </div>
     ),
