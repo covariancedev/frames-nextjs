@@ -49,7 +49,12 @@ app.frame("/check_user_status", async (c) => {
   ) {
     return c.res({
       image: (
-        <>No information found!</>
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            fontSize: 40,
+          }}>No information found!</div>
       ),
       intents: []
     })
@@ -73,7 +78,7 @@ app.frame("/check_user_status", async (c) => {
     intents:
       isParticipantOfWork ?
         [
-          <Button.Redirect location="https://covariance.network" >Continue Online</Button.Redirect>,
+          <Button.Redirect location="https://covariance.network">Continue Online</Button.Redirect>,
           <Button
             action={isParticipantOfWork ? "/add_profile_data" : undefined}
           >Continue Inline</Button>
@@ -86,9 +91,11 @@ app.frame("/check_user_status", async (c) => {
 
 
 app.frame("/add_profile_data/:info?", async (c) => {
-  const { info } = c.req.param()
 
   const { buttonValue, inputText, status, frameData } = c
+  const { info } = c.req.param()
+  console.log("add_profile_data", { info, buttonValue, inputText, status, });
+
 
   if (
     // buttonValue !== "start"
@@ -97,7 +104,12 @@ app.frame("/add_profile_data/:info?", async (c) => {
   ) {
     return c.res({
       image: (
-        <>No information found!</>
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            fontSize: 40,
+          }}>No information found!</div>
       ),
       intents: []
     })
@@ -109,11 +121,18 @@ app.frame("/add_profile_data/:info?", async (c) => {
 
   return c.res({
     image: (
-      <div>
+      <div
+        style={{
+          color: "white",
+          display: "flex",
+          fontSize: 40,
+        }}>
         {info ? `You have entered ${info}` : "Please enter your information"}
       </div>
     ),
-    intents: []
+    intents: [
+      <Button action="/check_user_status" value="start">Back</Button>
+    ]
   })
 })
 
