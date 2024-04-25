@@ -16,8 +16,10 @@ const app = new Frog({
 // export const runtime = 'edge'
 
 app.frame("/", async (c) => {
-  const { buttonValue, inputText, status } = c
-  console.log('frames.c', { c, buttonValue, inputText, })
+  const { buttonValue, inputText, status, frameData } = c
+  const { fid } = frameData ?? {}
+
+  console.log('frames.c', { buttonValue, inputText, frameData })
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(c.frameData?.fid ?? 1, "work")
 
   return c.res({
@@ -29,7 +31,7 @@ app.frame("/", async (c) => {
           fontSize: 40,
         }}
       >
-        {status === "initial" ? "Create your Covariance profile" : isParticipantOfWork ? "You can now create your profile" : "Sorry, you are not allowed to create a Covariance profile"
+        {status === "initial" ? "Create your Covariance profile" : isParticipantOfWork ? "You can now create your profile" : `Sorry, you are not allowed to create a Covariance profile. Your fid is ${fid}`
         }
       </div>
     ),
