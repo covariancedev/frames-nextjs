@@ -78,7 +78,7 @@ app.frame("/check_user_status", async (c) => {
     intents:
       isParticipantOfWork ?
         [
-          <Button.Link href="https://covariance.network">Continue Online</Button.Link>,
+          <Button.Link href="https://app.covariance.network/registration">Continue Online</Button.Link>,
           <Button
             action={isParticipantOfWork ? "/add_profile_data/start" : undefined}
           >Continue Inline</Button>
