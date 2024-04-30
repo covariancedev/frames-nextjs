@@ -1,7 +1,7 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
 import { isFarcasterUserParticipantOfWorkChannel } from '@/app/utils/fc-allowed-list'
-import { Button, Frog, TextInput } from '@airstack/frog'
+import { Button, FrameIntent, Frog, TextInput } from '@airstack/frog'
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
@@ -78,9 +78,9 @@ app.frame("/check_user_status", async (c) => {
     intents:
       isParticipantOfWork ?
         [
-          <Button.Redirect location="https://covariance.network">Continue Online</Button.Redirect>,
+          <Button.Link href="https://covariance.network">Continue Online</Button.Link>,
           <Button
-            action={isParticipantOfWork ? "/add_profile_data" : undefined}
+            action={isParticipantOfWork ? "/add_profile_data/start" : undefined}
           >Continue Inline</Button>
         ] :
         [<Button
@@ -90,12 +90,12 @@ app.frame("/check_user_status", async (c) => {
 })
 
 
-app.frame("/add_profile_data/:info?", async (c) => {
+app.frame("/add_profile_data/:info", async (c) => {
 
   const { buttonValue, inputText, status, frameData } = c
   const { info } = c.req.param()
   console.log("add_profile_data", { info, buttonValue, inputText, status, });
-
+  const intents: FrameIntent[] = []
 
   if (
     // buttonValue !== "start"
@@ -115,8 +115,49 @@ app.frame("/add_profile_data/:info?", async (c) => {
     })
   }
   const fid = isDev ? devFid : frameData.fid
+  let placeholder = ''
+  let label = ''
+  let next = ''
+
+  switch (info) {
+    case 'expertise':
+      next = "end"
+      placeholder = "I love to code"
+      label = "Anything else we need to know about you? (optional. Enter 'none' if not applicable)"
+      break;
+
+    case 'name':
+      next = "expertise"
+      placeholder = "Videos, VC, NFTs, etc."
+      label = "What are your top 5 areas of expertise?"
+      break;
+
+    case 'end':
+      label = "Thank you for providing your information. We will get back to you soon."
+      break;
+
+    default:
+      next = 'name'
+      placeholder = "John Doe"
+      label = "What's tour full name?"
+      break
+  }
 
   console.log(`info: ${info}`, fid);
+
+  if (info !== 'end') {
+    intents.push(
+      ...[
+        <TextInput placeholder={placeholder} />,
+        <Button
+          action={`/add_profile_data/${next}`}
+        >Save and Continue</Button>,
+      ])
+    // } else {
+    //   intents.push(
+    //     <Button action="/check_user_status">Finish</Button>
+    //   )
+  }
 
 
   return c.res({
@@ -127,12 +168,10 @@ app.frame("/add_profile_data/:info?", async (c) => {
           display: "flex",
           fontSize: 40,
         }}>
-        {info ? `You have entered ${info}` : "Please enter your information"}
+        {info ? `You have entered ${info}` : label}
       </div>
     ),
-    intents: [
-      <Button action="/check_user_status" value="start">Back</Button>
-    ]
+    intents
   })
 })
 
