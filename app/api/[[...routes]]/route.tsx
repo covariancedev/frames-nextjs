@@ -1,20 +1,32 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
-import { isFarcasterUserParticipantOfWorkChannel } from '@/app/utils/fc-allowed-list'
+import { Box, Heading, Text, VStack, vars } from '@utils/ui'
 import { Button, FrameIntent, Frog, TextInput } from '@airstack/frog'
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
+import { isFarcasterUserParticipantOfWorkChannel, getFarcasterUserDetails } from '@utils/farcaster'
 
 const app = new Frog({
   assetsPath: '/',
   basePath: '/api',
   apiKey: process.env.AIRSTACK_API_KEY as string,
+  ui: { vars }
 })
 const isDev = process.env.NODE_ENV === 'development'
 const devFid = 7589
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
+
+app.hono.get("/get-user/:id", async c => {
+  const data = await getFarcasterUserDetails(c.req.param().id)
+  return c.json(data)
+})
+
+
+app.hono.get('/healthcheck', (c) => {
+  return c.text('ribbit')
+})
 
 app.frame("/", (c) => {
   return c.res({
@@ -117,13 +129,15 @@ app.frame("/add_profile_data/:info", async (c) => {
   const fid = isDev ? devFid : frameData.fid
   let placeholder = ''
   let label = ''
+  let sublabel = ''
   let next = ''
 
   switch (info) {
     case 'expertise':
       next = "end"
       placeholder = "I love to code"
-      label = "Anything else we need to know about you? (optional. Enter 'none' if not applicable)"
+      label = "Anything else we need to know about you?"
+      sublabel = `(optional. Enter 'none' if not applicable)`
       break;
 
     case 'name':
@@ -133,7 +147,8 @@ app.frame("/add_profile_data/:info", async (c) => {
       break;
 
     case 'end':
-      label = "Thank you for providing your information. We will get back to you soon."
+      label = "Thank you for providing your information."
+      sublabel = `We will get back to you soon.`
       break;
 
     default:
@@ -162,16 +177,32 @@ app.frame("/add_profile_data/:info", async (c) => {
 
   return c.res({
     image: (
-      <div
-        style={{
-          color: "white",
-          display: "flex",
-          fontSize: 40,
-        }}>
-        {info ? `You have entered ${info}` : label}
-      </div>
+      <>
+        <Box
+          grow
+          alignVertical="center"
+          backgroundColor="white"
+          padding="32"
+          border="1em solid rgb(138, 99, 210)"
+        >
+          <VStack gap="20">
+            <Heading color="fcPurple" align="center" size="48">
+              Profile setup:
+            </Heading>
+            <>
+              <Text align="center" size="20">
+                {label}
+              </Text>
+              {sublabel.length > 1 ? <Text size="12">{sublabel}</Text> : <></>}
+            </>
+          </VStack>
+        </Box>
+      </>
     ),
-    intents
+    intents: [
+      ...intents,
+      <Button.Reset>♻️Reset</Button.Reset>
+    ]
   })
 })
 

@@ -1,3 +1,4 @@
+import config from "./config";
 import {
   createAllowList,
   CreateAllowListInput,
@@ -6,7 +7,6 @@ import {
   getFarcasterChannelParticipants,
   FarcasterChannelParticipantsInput,
   FarcasterChannelParticipantsOutput,
-  FarcasterChannelActionType,
 } from "@airstack/frog";
 
 export async function isFarcasterUserParticipantOfWorkChannel(
@@ -84,4 +84,52 @@ export async function getFarcasterUserAllowedList(fid: number) {
   } // throw new Error(error);
 
   console.log("getFarcasterUserAllowedList", isAllowed);
+}
+
+const FARQUEST_BASE_URL = "https://build.far.quest/farcaster/v2";
+
+async function request<T>({
+  path,
+  method = "GET",
+}: {
+  path: string;
+  method?: string;
+}) {
+  path = `${FARQUEST_BASE_URL}/${path}`;
+  console.log("request for " + path);
+
+  const response = await fetch(path, {
+    headers: {
+      accept: "application/json",
+      "API-KEY": config.farquestApiKey,
+    },
+    method,
+  });
+
+  if (!response.ok) {
+    console.error("request for " + path, response.statusText);
+
+    throw new Error(response.statusText);
+  }
+
+  const json = await response.json();
+
+  return json as T;
+}
+
+export async function getFarcasterUserDetails(id: string | number) {
+  try {
+    const data = await request<{
+      result: {
+        user: any;
+      };
+    }>({
+      path: `user${isNaN(Number(id)) ? "-by-username?=" : "?fid="}` + id,
+    });
+    return data.result.user;
+  } catch (e) {
+    console.error("getFarcasterUserDetails failed", e);
+
+    throw e;
+  }
 }
