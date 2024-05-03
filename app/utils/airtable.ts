@@ -83,64 +83,74 @@ export async function saveContributorFarcasterInfo(
   return res;
 }
 
-export async function getContributorsWithFarcasterUrl() {
+export async function syncContributorsWithFarcasterDataOnAirtable() {
   const urls: Record<string, unknown>[] = [];
-  const records = await airtable.contributors
-    .select({ filterByFormula: `Farcaster` })
-    .all();
+  let ok = true;
 
-  for (const rec of records) {
-    let url = rec.fields["Farcaster"] as string | undefined;
-    if (!url) {
-      continue;
-    }
-    // console.log(`Records info for recid:${rec.id}`, rec.fields);
+  try {
+    const records = await airtable.contributors
+      .select({ filterByFormula: `Farcaster` })
+      .all();
 
-    // remove trailing slash and trim
-    url = url.replace(/\/$/, "").trim();
-    const split = url.split("/");
+    for (const rec of records) {
+      let url = rec.fields["Farcaster"] as string | undefined;
+      if (!url) {
+        continue;
+      }
+      // console.log(`Records info for recid:${rec.id}`, rec.fields);
 
-    if (!url.startsWith("https://warpcast.com")) {
-      url = `https://warpcast.com/${split.findLast((_) => true)}`;
-      console.log(`new url built:`, url);
-      await updateFarcasterUrl(rec.id, url);
-    }
-    const username = extractWarpcastHandle(url);
-    console.log("username >>", username);
+      // remove trailing slash and trim
+      url = url.replace(/\/$/, "").trim();
+      const split = url.split("/");
 
-    if (!username) {
-      continue;
-    }
+      if (!url.startsWith("https://warpcast.com")) {
+        url = `https://warpcast.com/${split.findLast((_) => true)}`;
+        console.log(`new url built:`, url);
+        await updateFarcasterUrl(rec.id, url);
+      }
+      const username = extractWarpcastHandle(url);
+      console.log("username >>", username);
 
-    url = new URL(url).toString();
-    const fc = await getFcUser(username);
-    console.log(
-      `getContributorsWithFarcasterUrl >> user(${rec.fields["Name"]}) FC url:`,
-      url
-    );
+      if (!username) {
+        continue;
+      }
 
-    if (!fc) {
-      console.warn(
-        `getContributorsWithFarcasterUrl >> farcaster data not found for`,
-        username
+      url = new URL(url).toString();
+      const fc = await getFcUser(username);
+      console.log(
+        `syncContributorsWithFarcasterDataOnAirtable >> user(${rec.fields["Name"]}) FC url:`,
+        url
       );
-      continue;
-    }
 
-    const fcData = await getContributorFarcasterInfo(fc.fid);
-    console.log(
-      `getContributorsWithFarcasterUrl >> user(${rec.fields["Name"]}) is available?`,
-      Boolean(fcData.length)
+      if (!fc) {
+        console.warn(
+          `syncContributorsWithFarcasterDataOnAirtable >> farcaster data not found for`,
+          username
+        );
+        continue;
+      }
+
+      const fcData = await getContributorFarcasterInfo(fc.fid);
+      console.log(
+        `syncContributorsWithFarcasterDataOnAirtable >> user(${rec.fields["Name"]}) is available?`,
+        Boolean(fcData.length)
+      );
+
+      if (!fcData.length) {
+        addFarcasterInfo(fc, rec.id);
+      }
+
+      urls.push({
+        [username]: fc,
+      });
+    }
+  } catch (error) {
+    ok = false;
+    console.error(
+      `syncContributorsWithFarcasterDataOnAirtable >> error`,
+      error
     );
-
-    if (!fcData.length) {
-      addFarcasterInfo(fc, rec.id);
-    }
-
-    urls.push({
-      [username]: fc,
-    });
   }
 
-  return urls;
+  return { ok };
 }
