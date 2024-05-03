@@ -7,7 +7,23 @@ import {
   getFarcasterChannelParticipants,
   FarcasterChannelParticipantsInput,
   FarcasterChannelParticipantsOutput,
+  getFarcasterUserDetails,
+  FarcasterUserDetailsInput,
 } from "@airstack/frog";
+
+export async function getAirstackUserDetails(id: string | number) {
+  const fid = typeof id === "string" ? Number(id) : id;
+  const input: FarcasterUserDetailsInput = {
+    fid,
+  };
+  const { data, error } = await getFarcasterUserDetails(input);
+
+  if (error) throw new Error(error);
+
+  console.log("getAirstackUserDetails >>", { fid, data });
+
+  return data;
+}
 
 export async function isFarcasterUserParticipantOfWorkChannel(
   fid: number,
@@ -117,18 +133,19 @@ async function request<T>({
   return json as T;
 }
 
-export async function getFarcasterUserDetails(id: string | number) {
+export async function getFarQuestUserDetails(id: string | number) {
   try {
     const data = await request<{
       result: {
         user: any;
       };
     }>({
-      path: `user${isNaN(Number(id)) ? "-by-username?=" : "?fid="}` + id,
+      path:
+        `user${isNaN(Number(id)) ? "-by-username?username=" : "?fid="}` + id,
     });
     return data.result.user;
   } catch (e) {
-    console.error("getFarcasterUserDetails failed", e);
+    console.error("getFarQuestUserDetails failed", e);
 
     throw e;
   }

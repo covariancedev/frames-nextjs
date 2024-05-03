@@ -5,7 +5,8 @@ import { Button, FrameIntent, Frog, TextInput } from '@airstack/frog'
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
-import { isFarcasterUserParticipantOfWorkChannel, getFarcasterUserDetails } from '@utils/farcaster'
+import { isFarcasterUserParticipantOfWorkChannel, getFarQuestUserDetails } from '@utils/farcaster'
+import { airtable, getContributorsWithFarcasterUrl } from '@utils/airtable'
 
 const app = new Frog({
   assetsPath: '/',
@@ -19,8 +20,17 @@ const devFid = 7589
 // export const runtime = 'edge'
 
 app.hono.get("/get-user/:id", async c => {
-  const data = await getFarcasterUserDetails(c.req.param().id)
+  const data = await getFarQuestUserDetails(c.req.param().id)
   return c.json(data)
+})
+
+app.hono.get("/airtable", async c => {
+  const contributors =
+    await getContributorsWithFarcasterUrl()
+  const farcaster =
+    await airtable.farcaster.select().all()
+
+  return c.json({ contributors, farcaster })
 })
 
 
