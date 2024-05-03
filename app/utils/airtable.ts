@@ -2,27 +2,73 @@ import Airtable from "airtable";
 import config from "./config";
 import { AirtableBase } from "airtable/lib/airtable_base";
 import { extractWarpcastHandle } from "./misc";
-import { getAirstackUserDetails, getFarQuestUserDetails } from "./farcaster";
+import {
+  getAirstackUserDetails,
+  getFarQuestUserDetails,
+  getFcUser,
+} from "./farcaster";
 
 const client = new Airtable({ apiKey: config.airtable.pat });
 const base = client.base(config.airtable.database.id);
-
-async function updateFarcasterUrl(id: string, url: string) {
-  const res = await airtable.contributors.update(id, { Farcaster: url });
-  return res;
-}
 
 export const airtable = {
   contributors: base.table(config.airtable.database.tables.contributors),
   farcaster: base.table(config.airtable.database.tables.farcaster),
 };
 
-async function getContributorFarcasterInfo(fid: string) {
+async function updateFarcasterUrl(id: string, url: string) {
+  const res = await airtable.contributors.update(id, { Farcaster: url });
+  return res;
+}
+
+async function addFarcasterInfo(
+  {
+    fid,
+    bio,
+    addressTypes,
+    addresses,
+    fnames,
+    displayName,
+    pfp,
+  }: Awaited<ReturnType<typeof getFcUser>>,
+  contributorId: string
+) {
+  try {
+    const add = Object.fromEntries(
+      addressTypes.map((k) => {
+        let key = k as keyof typeof addresses;
+        const val = addresses[key];
+        key = key + (val && typeof val === "string" ? "Address" : "Addresses");
+        return [key, typeof val === "string" ? val : val?.join(",")];
+      })
+    );
+
+    const data = {
+      fid,
+      fnames: fnames.map((f) => "- " + f).join("\n"),
+      displayName,
+      fldixPzLtIfgkEEiT: [contributorId],
+      addressTypes,
+      pfp: [{ url: pfp }],
+      bio,
+      ...add,
+    };
+    const res = await airtable.farcaster.create(data);
+    console.log(`addFarcasterInfo >> saved for ${fnames[0]}`, res.id);
+
+    return res;
+  } catch (error) {
+    console.error(`addFarcasterInfo >> error for ${fnames[0]}`, error);
+  }
+}
+
+async function getContributorFarcasterInfo(fid: number) {
   console.log(`getContributorFarcasterInfo fid`, fid);
 
-  const res = await airtable.contributors
+  const res = await airtable.farcaster
     .select({
-      filterByFormula: `{Fid} = "${fid}"`,
+      filterByFormula: `{fid} = ${fid}`,
+      maxRecords: 1,
     })
     .all();
 
@@ -67,7 +113,7 @@ export async function getContributorsWithFarcasterUrl() {
     }
 
     url = new URL(url).toString();
-    const fc = await getFarQuestUserDetails(username);
+    const fc = await getFcUser(username);
     console.log(
       `getContributorsWithFarcasterUrl >> user(${rec.fields["Name"]}) FC url:`,
       url
@@ -81,24 +127,18 @@ export async function getContributorsWithFarcasterUrl() {
       continue;
     }
 
-    const fcData = await getContributorFarcasterInfo(fc.fid).catch(() => {});
+    const fcData = await getContributorFarcasterInfo(fc.fid);
     console.log(
-      `getContributorsWithFarcasterUrl >> user(${rec.fields["Name"]}) FC data:`,
-      fcData
+      `getContributorsWithFarcasterUrl >> user(${rec.fields["Name"]}) is available?`,
+      Boolean(fcData.length)
     );
-    const airstack = await getAirstackUserDetails(fc.fid).catch((e) => {
-      console.warn(
-        `getContributorsWithFarcasterUrl >> airstack data not found for`,
-        username,
-        e
-      );
-    });
+
+    if (!fcData.length) {
+      addFarcasterInfo(fc, rec.id);
+    }
 
     urls.push({
-      [url]: {
-        fc,
-        airstack,
-      },
+      [username]: fc,
     });
   }
 

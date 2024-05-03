@@ -18,9 +18,9 @@ export async function getAirstackUserDetails(id: string | number) {
   };
   const { data, error } = await getFarcasterUserDetails(input);
 
-  if (error) throw new Error(error);
+  if (error || !data) throw new Error(error);
 
-  console.log("getAirstackUserDetails >>", { fid, data });
+  console.log("getAirstackUserDetails >> ok", fid);
 
   return data;
 }
@@ -137,7 +137,29 @@ export async function getFarQuestUserDetails(id: string | number) {
   try {
     const data = await request<{
       result: {
-        user: any;
+        user: {
+          fid: string;
+          followingCount: number;
+          followerCount: number;
+          pfp: {
+            url: string;
+            verified: boolean;
+          };
+          bio: {
+            text: string;
+            mentions: string[];
+          };
+          external: boolean;
+          custodyAddress: string;
+          connectedAddress: string;
+          allConnectedAddresses?: {
+            ethereum: string[];
+            solana: string[];
+          };
+          username: string;
+          displayName: string;
+          registeredAt: number;
+        };
       };
     }>({
       path:
@@ -149,4 +171,33 @@ export async function getFarQuestUserDetails(id: string | number) {
 
     throw e;
   }
+}
+
+export async function getFcUser(username: string) {
+  const fromFarQuest = await getFarQuestUserDetails(username);
+  const fromAirstack = await getAirstackUserDetails(fromFarQuest.fid);
+  const user = {
+    fid: Number(fromFarQuest.fid),
+    bio: fromFarQuest.bio.text,
+    fnames: fromAirstack.fnames as unknown as string[],
+    displayName: fromFarQuest.displayName,
+    addresses: {
+      custody: fromFarQuest.custodyAddress,
+      ethereum: fromFarQuest.allConnectedAddresses?.ethereum,
+      solana: fromFarQuest.allConnectedAddresses?.solana,
+    },
+    pfp: fromAirstack.profileImage?.large ?? fromFarQuest.pfp.url,
+    url: `https://warpcast.com/${fromFarQuest.username}`,
+  };
+  const data = {
+    ...user,
+    addressTypes: Object.keys(user.addresses).filter((k) => {
+      const key = k as keyof typeof user.addresses;
+      return typeof user.addresses[key] === "object"
+        ? user.addresses[key]?.length
+        : user.addresses[key];
+    }),
+  };
+
+  return data;
 }
