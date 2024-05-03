@@ -10,7 +10,7 @@ import { airtable, syncContributorsWithFarcasterDataOnAirtable } from '@utils/ai
 
 const app = new Frog({
   assetsPath: '/',
-  basePath: '/api',
+  basePath: '/frames',
   apiKey: process.env.AIRSTACK_API_KEY as string,
   ui: { vars }
 })
