@@ -27,7 +27,19 @@
       ],
       "@utils/*": [
         "./app/utils/*"
-      ]
+      ],
+      "@components/*": [
+        "./app/components/*"
+      ],
+      "@styles/*": [
+        "./app/styles/*"
+      ],
+      "@hooks/*": [
+        "./app/hooks/*"
+      ],
+      "@routes/*": [
+        "./app/routes/*"
+      ],
     }
   },
   "include": [

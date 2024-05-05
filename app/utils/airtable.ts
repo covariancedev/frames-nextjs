@@ -14,6 +14,7 @@ const base = client.base(config.airtable.database.id);
 export const airtable = {
   contributors: base.table(config.airtable.database.tables.contributors),
   farcaster: base.table(config.airtable.database.tables.farcaster),
+  hubs: base.table("Hubs"),
 };
 
 async function updateFarcasterUrl(id: string, url: string) {
@@ -73,6 +74,19 @@ async function getContributorFarcasterInfo(fid: number) {
     .all();
 
   return res;
+}
+
+export async function getHubs() {
+  const hubs: Record<string, string>[] = [];
+  const res = await airtable.hubs.select().all();
+
+  for (const rec of res) {
+    hubs.push({
+      id: rec.id,
+      name: rec.fields["Hub Name"] as string,
+    });
+  }
+  return hubs;
 }
 
 export async function saveContributorFarcasterInfo(
