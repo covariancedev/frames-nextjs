@@ -1,8 +1,5 @@
 import { airtableData } from "@/app/data";
-import {
-  getHubs,
-  syncContributorsWithFarcasterDataOnAirtable,
-} from "@utils/airtable";
+import { getHubs } from "@utils/airtable/utils";
 
 export async function GET() {
   const hubs = await getHubs();

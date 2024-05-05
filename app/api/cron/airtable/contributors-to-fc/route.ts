@@ -1,4 +1,4 @@
-import { syncContributorsWithFarcasterDataOnAirtable } from "@utils/airtable";
+import { syncContributorsWithFarcasterDataOnAirtable } from "@utils/airtable/farcaster";
 
 export async function GET() {
   const result = await syncContributorsWithFarcasterDataOnAirtable();
