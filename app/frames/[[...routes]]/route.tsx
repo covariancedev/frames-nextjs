@@ -1,15 +1,13 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
-import { Box, Heading, Text, VStack, vars } from '@utils/ui'
-import { Button, FrameIntent, Frog, TextInput } from '@airstack/frog'
+import { vars } from '@utils/ui'
+import { Frog } from '@airstack/frog'
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
-import { isFarcasterUserParticipantOfWorkChannel, getFarQuestUserDetails } from '@utils/farcaster'
-import { airtable, getHubs, syncContributorsWithFarcasterDataOnAirtable } from '@utils/airtable'
+import { getFarQuestUserDetails } from '@utils/farcaster'
 
 import profileSignupFrame from '@routes/frames/profile/signup'
-import { airtableData } from '@/app/data'
 
 
 const app = new Frog({
@@ -18,8 +16,7 @@ const app = new Frog({
   apiKey: process.env.AIRSTACK_API_KEY as string,
   ui: { vars }
 })
-const isDev = process.env.NODE_ENV === 'development'
-const devFid = 7589
+
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
 
@@ -30,11 +27,6 @@ app.hono.get("/get-user/:id", async c => {
 
 app.route("/profile_signup", profileSignupFrame);
 
-app.hono.get("/airtable", async c => {
-  const hubs = await getHubs()
-
-  return c.json({ hubs, airtableData })
-})
 
 
 app.hono.get('/healthcheck', (c) => {
