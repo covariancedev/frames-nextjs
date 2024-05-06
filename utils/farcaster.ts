@@ -57,7 +57,7 @@ export async function isFarcasterUserParticipantOfWorkChannel(
       //   );
       participant.fid === fid.toString()
   );
-  console.log("isFarcasterUserParticipantOfWorkChannel", { found });
+  console.log("isFarcasterUserParticipantOfWorkChannel", found?.profileName);
   return !!found;
 }
 

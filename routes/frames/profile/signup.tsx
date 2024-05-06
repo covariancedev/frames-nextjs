@@ -1,25 +1,27 @@
 /** @jsxImportSource @airstack/frog/jsx */
 import { Box, Heading, Text, VStack, vars } from "@/utils/ui";
 import { Button, Frog, TextInput } from "@airstack/frog";
-import { isFarcasterUserParticipantOfWorkChannel } from "@/utils/farcaster";
+import { getFarQuestUserDetails, getFcUser, isFarcasterUserParticipantOfWorkChannel } from "@/utils/farcaster";
 import { redis } from "@/utils/redis";
+import { airtable } from "@/utils/airtable/client";
+import { addFarcasterInfo } from "@/utils/airtable/farcaster";
 
 type State = {
   info: Record<string, unknown>
+  user?: Awaited<ReturnType<typeof getFarQuestUserDetails>>
 }
+
+type RedisFarcasterUser = Awaited<ReturnType<typeof getFcUser>>
 
 const app = new Frog<{ State: State }>({
   apiKey: process.env.AIRSTACK_API_KEY as string,
   ui: { vars },
   initialState: {
-    info: {}
-  }
+    info: {},
+    user: undefined
+  },
+  verify: true
 });
-
-type RedisFarcasterUser = {
-  fid: number
-  username: string
-}
 
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -28,6 +30,7 @@ const devFid = 7589
 
 
 app.frame("/", (c) => {
+
   return c.res({
     action: "/check_user_status",
     image: (
@@ -65,9 +68,16 @@ app.frame("/", (c) => {
 });
 
 app.frame("/check_user_status", async (c) => {
+  await c.deriveState(async (previousState) => {
+    if (c.frameData && !previousState.user) {
+      previousState.user = await getFarQuestUserDetails(isDev ? devFid : c.frameData.fid)
+    }
+    previousState.info = {}
+
+  })
 
   const { buttonValue, inputText, status, frameData, verified } = c
-  console.log("check_user_status", { buttonValue, inputText, status, verified });
+  console.log("check_user_status", { inputText, status, verified });
 
   if (
     buttonValue !== "start"
@@ -87,7 +97,7 @@ app.frame("/check_user_status", async (c) => {
     })
   }
   const fid = isDev ? devFid : frameData.fid
-  const frameUser = await redis.hget<RedisFarcasterUser>("farcaster_contributors", `${fid}`)
+  const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'username')
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
 
   return c.res({
@@ -142,20 +152,17 @@ app.frame("/check_user_status", async (c) => {
 
 app.frame("/add_profile_data/:info", async (c) => {
 
-  const { buttonValue, inputText, status, frameData, previousState, deriveState } = c
-  const { info } = c.req.param()
-  const pstate = previousState.info
+  let { info } = c.req.param()
+  const { inputText, status, frameData, deriveState, verified } = c
   const state = deriveState(previousState => {
-    if (buttonValue && !['start', 'end'].includes(info)) {
-      previousState.info[info] = buttonValue
+    if (inputText && !['start'].includes(info)) {
+      previousState.info[info === 'end' ? 'about' : info] = inputText
     }
   })
-  console.log("add_profile_data", { info, state, pstate, buttonValue, inputText, status, });
+  console.log("add_profile_data", { info, state, inputText, status, verified });
 
   if (
-    // buttonValue !== "start"
-    // ||
-    !frameData
+    !frameData || !state.user
   ) {
     return c.res({
       image: (
@@ -174,14 +181,59 @@ app.frame("/add_profile_data/:info", async (c) => {
   let label = ''
   let sublabel = ''
   let next = ''
+  let isError = false
+  const saveToDb = false// !isDev
+  let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
+
+  const emailResponse = info === 'email' ? await airtable.contributors.select({ filterByFormula: `{Email} = '${state.info.email}'`, maxRecords: 1 }).all() : []
+
+  if (info === 'email' && emailResponse.length > 0) {
+    console.log('emailResponse', emailResponse[0].id);
+
+    sublabel = `${state.info.email} is already in use.`
+    isError = true
+    info = 'start'
+  }
+
+  if (info === 'expertise') {
+    if (expertise.length > 5) {
+
+      sublabel = `Please enter at least 5 areas of expertise.`
+      isError = true
+      info = 'role'
+    }
+    expertise = expertise.slice(0, 5)
+
+  }
+
+  if (info === 'end') {
+    if (saveToDb) {
+      const fcUser = await getFcUser(state.user.username)
+
+      const contributor =
+        await airtable.contributors.create({
+          Name: state.info.name as string,
+          Email: state.info.email as string,
+          Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
+          Role: state.info.role as string,
+          Company: state.info.company as string,
+          ToS: true,
+          Farcaster: `https://warpcast.com/${fid}`,
+          fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim())
+        })
+
+      await addFarcasterInfo(fcUser, contributor.id)
+      await redis.hset(`farcaster_contributors:${fid}`, fcUser)
+    }
+  }
+  // 1. email
+  // 2. name
+  // 3. company
+  // 4. role
+  // 5. expertise
+  // 6. end
 
   switch (info) {
-    case 'expertise':
-      next = "end"
-      placeholder = "I love to code"
-      label = "Anything else we need to know about you?"
-      sublabel = `(optional. Enter 'none' if not applicable)`
-      break;
 
     case 'email':
       next = 'name'
@@ -190,9 +242,28 @@ app.frame("/add_profile_data/:info", async (c) => {
       break
 
     case 'name':
+      next = "company"
+      placeholder = "Covariance"
+      label = "What's your company name?"
+      break;
+
+    case 'company':
+      next = "role"
+      placeholder = "CEO"
+      label = "What's your role at the company?"
+      break;
+
+    case 'role':
       next = "expertise"
       placeholder = "Videos, VC, NFTs, etc."
       label = "What are your top 5 areas of expertise?"
+      break;
+
+    case 'expertise':
+      next = "end"
+      placeholder = "I love to code"
+      label = "Anything else we need to know about you?"
+      sublabel = `(optional. Enter 'none' if not applicable)`
       break;
 
     case 'end':
@@ -228,7 +299,7 @@ app.frame("/add_profile_data/:info", async (c) => {
             <Text align="center" size="20">
               {label}
             </Text>
-            {sublabel.length > 1 ? <Text size="12">{sublabel}</Text> : <></>}
+            {sublabel.length > 1 ? <Text size="20" align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
           </VStack>
         </Box>
       </>

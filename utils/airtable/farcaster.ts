@@ -7,7 +7,7 @@ async function updateFarcasterUrl(id: string, url: string) {
   return res;
 }
 
-async function addFarcasterInfo(
+export async function addFarcasterInfo(
   {
     fid,
     bio,

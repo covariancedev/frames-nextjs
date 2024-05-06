@@ -8,12 +8,6 @@ dependencies:
   '@airstack/frog':
     specifier: ^0.0.10
     version: 0.0.10(@types/node@20.12.7)(graphql@16.7.1)(hono@4.2.4)(typescript@5.4.5)(zod@3.23.6)
-  '@deno/kv':
-    specifier: ^0.7.0
-    version: 0.7.0
-  '@olli/kvdex':
-    specifier: npm:@jsr/olli__kvdex@^1.0.1
-    version: /@jsr/olli__kvdex@1.0.1
   '@resvg/resvg-js':
     specifier: ^2.6.2
     version: 2.6.2
@@ -257,51 +251,6 @@ packages:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
     dev: true
-
-  /@deno/kv-darwin-arm64@0.7.0:
-    resolution: {integrity: sha512-PaTriht31Rb08TwWdAkmODrLNnGnl9l8nlF/0aae/v7dzJ5FeaoX+0RgxTD+m90quG3ynsdLsY8iCa+st+MkiA==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@deno/kv-darwin-x64@0.7.0:
-    resolution: {integrity: sha512-Yw4Gmn6opUJ6ZVuztNaGS4yt11KyJI/juTAyzNiY5H3VhHD7xVm+peG4SGkr6Hq/vXVGcQM3Lldw5b3aJJQYSg==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@deno/kv-linux-x64-gnu@0.7.0:
-    resolution: {integrity: sha512-D6xJcx4HSUbgomxGV2lGUgKrRmwHNMmCbu8XRxBjIgpsKrFK1W6w+KitI92wMCgEIOAFAnfeyrYxtMzh2ZdYTw==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@deno/kv-win32-x64-msvc@0.7.0:
-    resolution: {integrity: sha512-0UWf6a+T7e/1uOcUgUKTrMupIQSnCI02856ecu9JwutajSvvbSgoi+jpmaUnYW6QqcXjY8ECI/28CQi1DvYYhw==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /@deno/kv@0.7.0:
-    resolution: {integrity: sha512-+vYCIWDQq+03RKwh85WDBVplwT7gimcLyLezj6C3OuMwaTWfPy9NVmA5y4Mwpoht0+H4CjknEUE7LrfZJAcQ7w==}
-    optionalDependencies:
-      '@deno/kv-darwin-arm64': 0.7.0
-      '@deno/kv-darwin-x64': 0.7.0
-      '@deno/kv-linux-x64-gnu': 0.7.0
-      '@deno/kv-win32-x64-msvc': 0.7.0
-    dev: false
 
   /@edge-runtime/cookies@3.4.1:
     resolution: {integrity: sha512-z27BvgPxI73CgSlxU/NAUf1Q/shnqi6cobHEowf6VuLdSjGR3NjI2Y5dZUIBbK2zOJVZbXcHsVzJjz8LklteFQ==}
@@ -798,44 +747,6 @@ packages:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
-
-  /@jsr/olli__kvdex@1.0.1:
-    resolution: {integrity: sha512-o3zUh+sSyh3rve0QSBT9qr5SaAPWgnedjckdIoSMHqt+YodxObvRqV14EPYgMRQe8HEG7ydSLd+574R7umG6GA==, tarball: https://npm.jsr.io/~/10/@jsr/olli__kvdex/1.0.1.tgz}
-    dependencies:
-      '@jsr/std__bytes': 0.220.1
-      '@jsr/std__cli': 0.217.0
-      '@jsr/std__collections': 0.220.1
-      '@jsr/std__ulid': 0.220.1
-      zod: 3.23.6
-    dev: false
-
-  /@jsr/std__assert@0.217.0:
-    resolution: {integrity: sha512-PXfKAbR7UnA3yHdN8YPxyS6htFR6SxB5qIWQ4qj53Uk/2HmZI38s4epFoxJVzznr6/SfTnBsnlDvOTz3/zzkBw==, tarball: https://npm.jsr.io/~/10/@jsr/std__assert/0.217.0.tgz}
-    dependencies:
-      '@jsr/std__fmt': 0.217.0
-    dev: false
-
-  /@jsr/std__bytes@0.220.1:
-    resolution: {integrity: sha512-WKaGIwLX9gNFFCA8NkUVR6nRHJXQLZZYBqFSRfCwCLPJTybGkXnz7wImpWSlK7/8MsHogZGghoeu5HsTGcDnaA==, tarball: https://npm.jsr.io/~/10/@jsr/std__bytes/0.220.1.tgz}
-    dev: false
-
-  /@jsr/std__cli@0.217.0:
-    resolution: {integrity: sha512-SR5BT1EyT1CVpwWxF6Dgi56qEc0UzrIo2YsOpPoQaQwiNjuvUX/jhHAB+Zrnq6qXFxjC/QdH8FVT8m7zw6E+iw==, tarball: https://npm.jsr.io/~/10/@jsr/std__cli/0.217.0.tgz}
-    dependencies:
-      '@jsr/std__assert': 0.217.0
-    dev: false
-
-  /@jsr/std__collections@0.220.1:
-    resolution: {integrity: sha512-MfiWZ8UX30g1Fpu8y6eh69E2roUreDyik4/ZDU69O2hEIU64BFVnj0wjfSzCmlE9Bglb/SkmNeU1pZEE7Y3usQ==, tarball: https://npm.jsr.io/~/10/@jsr/std__collections/0.220.1.tgz}
-    dev: false
-
-  /@jsr/std__fmt@0.217.0:
-    resolution: {integrity: sha512-pQRa66ED0t+s8EBiykT7LRU/vQurz3kLOf3qHXGnEH7sj7Uobb2CUlb851LogKwoNLfk3b7X+yQRrUS5v9TKbw==, tarball: https://npm.jsr.io/~/10/@jsr/std__fmt/0.217.0.tgz}
-    dev: false
-
-  /@jsr/std__ulid@0.220.1:
-    resolution: {integrity: sha512-tUwZYsNICk9FagVyfiWsLhyOYMqFXFCIfPqN76uej2hPXoyd8eLJLcjoMmnOi4gdTCp5RSp3X796qBGHRpgdMQ==, tarball: https://npm.jsr.io/~/10/@jsr/std__ulid/0.220.1.tgz}
-    dev: false
 
   /@mapbox/node-pre-gyp@1.0.11:
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}

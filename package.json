@@ -13,8 +13,6 @@
   },
   "dependencies": {
     "@airstack/frog": "^0.0.10",
-    "@deno/kv": "^0.7.0",
-    "@olli/kvdex": "npm:@jsr/olli__kvdex@^1.0.1",
     "@resvg/resvg-js": "^2.6.2",
     "@upstash/redis": "^1.30.0",
     "airtable": "^0.12.2",
