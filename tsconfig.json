@@ -10,8 +10,11 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "target": "es2022",
+    /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",

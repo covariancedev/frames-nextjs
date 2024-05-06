@@ -13,7 +13,7 @@ const nextConfig = {
       ],
     },
     experimental: {
-      serverComponentsExternalPackages: ["@resvg/resvg-js", "airtable"],
+      serverComponentsExternalPackages: ["@resvg/resvg-js", "airtable","@olli/kvdex","@deno/kv"],
     },
     webpack: (config) => {
       config.externals.push({

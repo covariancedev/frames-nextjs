@@ -13,14 +13,18 @@
   },
   "dependencies": {
     "@airstack/frog": "^0.0.10",
+    "@deno/kv": "^0.7.0",
+    "@olli/kvdex": "npm:@jsr/olli__kvdex@^1.0.1",
     "@resvg/resvg-js": "^2.6.2",
+    "@upstash/redis": "^1.30.0",
     "airtable": "^0.12.2",
     "dotenv": "^16.4.5",
     "frog": "^0.8.7",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18",
-    "sharp": "^0.33.3"
+    "sharp": "^0.33.3",
+    "zod": "^3.23.6"
   },
   "devDependencies": {
     "@types/node": "^20",
