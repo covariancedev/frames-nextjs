@@ -1,4 +1,4 @@
-import { vars } from "@utils/ui";
+import { vars } from "@/utils/ui";
 import { Frog } from "@airstack/frog";
 
 const app = new Frog({

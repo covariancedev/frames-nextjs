@@ -1,5 +1,5 @@
 import { airtableData } from "@/app/data";
-import { getHubs } from "@utils/airtable/utils";
+import { getHubs } from "@/utils/airtable/utils";
 
 export async function GET() {
   const hubs = await getHubs();

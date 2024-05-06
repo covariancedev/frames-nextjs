@@ -12,8 +12,6 @@
     "esModuleInterop": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "moduleDetection": "force",
-    "target": "es2022",
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -25,23 +23,23 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
+      // "@/*": [
+      //   "./*"
+      // ],
+      "@/utils/*": [
+        "./utils/*"
       ],
-      "@utils/*": [
-        "./app/utils/*"
+      "@/components/*": [
+        "./components/*"
       ],
-      "@components/*": [
-        "./app/components/*"
+      "@/styles/*": [
+        "./styles/*"
       ],
-      "@styles/*": [
-        "./app/styles/*"
+      "@/hooks/*": [
+        "./hooks/*"
       ],
-      "@hooks/*": [
-        "./app/hooks/*"
-      ],
-      "@routes/*": [
-        "./app/routes/*"
+      "@/routes/*": [
+        "./routes/*"
       ],
     }
   },

@@ -1,13 +1,13 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
-import { vars } from '@utils/ui'
+import { vars } from '@/utils/ui'
 import { Frog } from '@airstack/frog'
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
-import { getFarQuestUserDetails } from '@utils/farcaster'
+import { getFarQuestUserDetails } from '@/utils/farcaster'
 
-import profileSignupFrame from '@routes/frames/profile/signup'
+import profileSignupFrame from '@/routes/frames/profile/signup'
 
 
 const app = new Frog({

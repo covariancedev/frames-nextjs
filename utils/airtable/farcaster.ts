@@ -48,7 +48,7 @@ async function addFarcasterInfo(
   }
 }
 
-async function getContributorFarcasterInfo(fid: number) {
+export async function getContributorFarcasterInfo(fid: number) {
   console.log(`getContributorFarcasterInfo fid`, fid);
 
   const res = await airtable.farcaster
@@ -58,7 +58,7 @@ async function getContributorFarcasterInfo(fid: number) {
     })
     .all();
 
-  return res;
+  return res.length ? res[0] : null;
 }
 
 export async function saveContributorFarcasterInfo(
@@ -119,10 +119,10 @@ export async function syncContributorsWithFarcasterDataOnAirtable() {
       const fcData = await getContributorFarcasterInfo(fc.fid);
       console.log(
         `syncContributorsWithFarcasterDataOnAirtable >> user(${rec.fields["Name"]}) is available?`,
-        Boolean(fcData.length)
+        Boolean(fcData)
       );
 
-      if (!fcData.length) {
+      if (!fcData) {
         addFarcasterInfo(fc, rec.id);
       }
 
