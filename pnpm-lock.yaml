@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@airstack/frog':
-    specifier: ^0.0.10
-    version: 0.0.10(@types/node@20.12.7)(graphql@16.7.1)(hono@4.2.4)(typescript@5.4.5)(zod@3.23.6)
+    specifier: ^0.0.14
+    version: 0.0.14(@types/node@20.12.7)(graphql@16.7.1)(hono@4.2.4)(typescript@5.4.5)(zod@3.23.6)
   '@resvg/resvg-js':
     specifier: ^2.6.2
     version: 2.6.2
@@ -62,8 +62,8 @@ packages:
     resolution: {integrity: sha512-nA9XHtlAkYfJxY7bce8DcN7eKxWWCWkU+1GR9d+U6MbNpfwQp8TI7vqOsBsMcHoT4mBu2kypKoSKnghEzOOq5Q==}
     dev: false
 
-  /@airstack/frames@1.1.5(graphql@16.7.1)(typescript@5.4.5)(zod@3.23.6):
-    resolution: {integrity: sha512-HzhVuyYsY5OM4EigMF7yfAif1NtAHxGaxBio7/pXeOw7jVaFRqasF+jniV93VACx71xzSpLVVHIA/S846ZmyIA==}
+  /@airstack/frames@1.1.6(graphql@16.7.1)(typescript@5.4.5)(zod@3.23.6):
+    resolution: {integrity: sha512-Ey1B8StVzDqrTzaT01unYErxvPcIzLZ8KXGDEI9pUn+8TurCayWBRUCtkljEF1PgkGedUjwt+pYyAG3CsjY5yQ==}
     dependencies:
       '@airstack/node': 0.0.6
       '@bufbuild/buf': 1.31.0
@@ -92,8 +92,8 @@ packages:
       - zod
     dev: false
 
-  /@airstack/frog@0.0.10(@types/node@20.12.7)(graphql@16.7.1)(hono@4.2.4)(typescript@5.4.5)(zod@3.23.6):
-    resolution: {integrity: sha512-oxtquTrX6onUiPw85UfJM9Ny+5MEdW4Pmbs84seRA0q1MLPLe9bVEosq04ttoQVbddyixslXBI+XmFAwf9u/QA==}
+  /@airstack/frog@0.0.14(@types/node@20.12.7)(graphql@16.7.1)(hono@4.2.4)(typescript@5.4.5)(zod@3.23.6):
+    resolution: {integrity: sha512-Dqk/TSVdfY+tdeRLB/6WlJhx0VdyawsdohzSaYshq4CXuvV4TpRTCLs/C/SSXNSTalyv4BhYzphcl5Yp+zqrjQ==}
     hasBin: true
     peerDependencies:
       hono: ^4
@@ -102,7 +102,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@airstack/frames': 1.1.5(graphql@16.7.1)(typescript@5.4.5)(zod@3.23.6)
+      '@airstack/frames': 1.1.6(graphql@16.7.1)(typescript@5.4.5)(zod@3.23.6)
       '@bufbuild/protobuf': 1.9.0
       '@hono/node-server': 1.11.0
       '@hono/valibot-validator': 0.2.3(hono@4.2.4)(valibot@0.30.0)

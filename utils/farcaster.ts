@@ -9,6 +9,7 @@ import {
   FarcasterChannelParticipantsOutput,
   getFarcasterUserDetails,
   FarcasterUserDetailsInput,
+  FarcasterChannelActionType,
 } from "@airstack/frog";
 
 export async function getAirstackUserDetails(id: string | number) {
@@ -25,17 +26,48 @@ export async function getAirstackUserDetails(id: string | number) {
   return data;
 }
 
-export async function isFarcasterUserParticipantOfWorkChannel(
+export async function isFarcasterUserParticipantOfWorkChannelFromWarpcastAPI(
   fid: number,
   channel = "farcaster"
 ) {
-  console.log("isFarcasterUserParticipantOfWorkChannel", { fid, channel });
+  console.log("isFarcasterUserParticipantOfWorkChannelFromWarpcastAPI", {
+    fid,
+    channel,
+  });
+
+  const res = await fetch(
+    `https://api.warpcast.com/v1/channel-followers?channelId=${channel}`
+  );
+
+  if (res.status !== 200) {
+    const json = (await res.json()) as { errors: { message: string }[] };
+    console.error(json.errors.join("\n"));
+    return false;
+  }
+
+  const data = (await res.json()) as {
+    result: { users: number[]; fids: number[] };
+  };
+
+  const found = data.result.fids.find((participant) => participant === fid);
+  console.log(
+    `isFarcasterUserParticipantOfWorkChannelFromWarpcastAPI >> is ${found} a follower of ${channel}?`,
+    !!found
+  );
+  return !!found;
+}
+
+export async function isFarcasterUserParticipantOfWorkChannelFromAirstack(
+  fid: number,
+  channel = "farcaster"
+) {
+  console.log("isFarcasterUserParticipantOfWorkChannelFromAirstack", {
+    fid,
+    channel,
+  });
   const input: FarcasterChannelParticipantsInput = {
     channel,
-    // actionType: [
-    //   FarcasterChannelActionType.Cast,
-    //   FarcasterChannelActionType.Reply,
-    // ],
+    actionType: [FarcasterChannelActionType.Follow],
     // lastActionTimestamp: {
     //   after: "2024-02-01T00:00:00Z",
     //   before: "2024-02-28T00:00:00Z",
@@ -47,7 +79,7 @@ export async function isFarcasterUserParticipantOfWorkChannel(
     await getFarcasterChannelParticipants(input);
 
   if (error) {
-    console.error("isFarcasterUserParticipantOfWorkChannel", error);
+    console.error("isFarcasterUserParticipantOfWorkChannelFromAirstack", error);
     return false;
   } // throw new Error(error);
 
@@ -57,8 +89,33 @@ export async function isFarcasterUserParticipantOfWorkChannel(
       //   );
       participant.fid === fid.toString()
   );
-  console.log("isFarcasterUserParticipantOfWorkChannel", found?.profileName);
+  console.log(
+    "isFarcasterUserParticipantOfWorkChannelFromAirstack",
+    found?.profileName
+  );
   return !!found;
+}
+
+export async function isFarcasterUserParticipantOfWorkChannel(
+  fid: number,
+  channel = "farcaster",
+  from: "warpcast" | "airstack" = "airstack"
+) {
+  console.log("isFarcasterUserParticipantOfWorkChannel", {
+    fid,
+    channel,
+    from,
+  });
+
+  const found =
+    from === "warpcast"
+      ? await isFarcasterUserParticipantOfWorkChannelFromWarpcastAPI(
+          fid,
+          channel
+        )
+      : await isFarcasterUserParticipantOfWorkChannelFromAirstack(fid, channel);
+  console.log(`is ${found} a follower of ${channel} from ${from}?`, found);
+  return found;
 }
 
 export async function getFarcasterUserAllowedList(fid: number) {

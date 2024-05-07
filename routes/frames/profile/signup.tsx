@@ -72,9 +72,9 @@ app.frame("/", (c) => {
 });
 
 app.frame("/check_user_status", async (c) => {
-  await c.deriveState(async (previousState) => {
+  const state = await c.deriveState(async (previousState) => {
     if (c.frameData && !previousState.user) {
-      previousState.user = await getFarQuestUserDetails(isDev ? devFid : c.frameData.fid)
+      previousState.user = await getFarQuestUserDetails(c.frameData.fid)
     }
     previousState.info = {}
 
@@ -86,7 +86,8 @@ app.frame("/check_user_status", async (c) => {
   if (
     buttonValue !== "start"
     ||
-    !frameData
+    !frameData ||
+    !state.user
   ) {
     return c.res({
       image: (
@@ -100,9 +101,10 @@ app.frame("/check_user_status", async (c) => {
       intents: []
     })
   }
-  const fid = isDev ? devFid : frameData.fid
+  const fid = frameData.fid
   const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'username')
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
+  // const name = <Text>{state.user.username}</Text>
 
   return c.res({
     image: (
@@ -118,12 +120,12 @@ app.frame("/check_user_status", async (c) => {
           {/* <Box alignVertical='center'> */}
 
 
-          <Text size='20' wrap="balance">
+          <Text size='20'>
             {
-              frameUser ? "Sorry, you'are already a Covariance Contributor" :
+              frameUser ? `Sorry ${state.user.username}, you'are already a Covariance Contributor` :
                 isParticipantOfWork ?
 
-                  `🎉 Congratulations! 🎉 You're part of those allowed to apply`
+                  `🎉 Congratulations, ${state.user.username}! 🎉 You're part of those allowed to apply`
                   :
                   `Sorry, you are not allowed to create a Covariance profile because you do not belong to the /work channel.`
             }
@@ -180,13 +182,13 @@ app.frame("/add_profile_data/:info", async (c) => {
       intents: []
     })
   }
-  const fid = isDev ? devFid : frameData.fid
+  const fid = frameData.fid
   let placeholder = ''
   let label = ''
   let sublabel = ''
   let next = ''
   let isError = false
-  const saveToDb =!isDev
+  const saveToDb = !isDev
   let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
 
   const emailResponse = info === 'email' ? await airtable.contributors.select({ filterByFormula: `{Email} = '${state.info.email}'`, maxRecords: 1 }).all() : []
