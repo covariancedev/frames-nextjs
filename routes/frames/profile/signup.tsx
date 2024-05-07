@@ -142,7 +142,7 @@ app.frame("/check_user_status", async (c) => {
       </Box>
     ),
     intents:
-      isParticipantOfWork ?
+      !frameUser && isParticipantOfWork ?
         [
           <Button.Link href="https://app.covariance.network/registration">Apply Online</Button.Link>,
           <Button
