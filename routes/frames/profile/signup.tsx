@@ -102,7 +102,7 @@ app.frame("/check_user_status", async (c) => {
   }
   const fid = frameData.fid
   const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'fid')
-  const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
+  const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
   // const name = <Text>{state.user.username}</Text>
 
 
