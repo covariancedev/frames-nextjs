@@ -5,6 +5,7 @@ import { getFarQuestUserDetails, getFcUser, isFarcasterUserParticipantOfWorkChan
 import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
 import { addFarcasterInfo } from "@/utils/airtable/farcaster";
+import config from "@/utils/config";
 
 type State = {
   info: Record<string, unknown>
@@ -219,8 +220,13 @@ app.frame("/add_profile_data/:info", async (c) => {
           Company: state.info.company as string,
           ToS: true,
           Farcaster: `https://warpcast.com/${fid}`,
-          fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim())
-        })
+          fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
+          "Source": [
+            "Covariance"
+          ], "Referred by": "Lior Goldenberg",
+          "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
+          "Invite Code": config.inviteCode,
+        }, { typecast: true })
 
       await addFarcasterInfo(fcUser, contributor.id)
       await redis.hset(`farcaster_contributors:${fid}`, fcUser)
