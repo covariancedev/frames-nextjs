@@ -122,7 +122,7 @@ app.frame("/check_user_status", async (c) => {
 
           <Text size='20' color={frameUser ? "red" : undefined}>
             {
-              frameUser ? `Sorry ${state.user.username}, you'are already a Covariance Contributor` :
+              frameUser ? `Sorry ${state.user.username}, you're already a Covariance Contributor` :
                 isParticipantOfWork ?
 
                   `🎉 Congratulations, ${state.user.username}! 🎉 You're part of those allowed to apply`
@@ -224,7 +224,7 @@ app.frame("/add_profile_data/:info", async (c) => {
           Role: state.info.role as string,
           Company: state.info.company as string,
           ToS: true,
-          Farcaster: `https://warpcast.com/${fid}`,
+          Farcaster: `https://warpcast.com/${state.user.username}`,
           fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
           "Source": [
             "Covariance"
