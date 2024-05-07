@@ -131,7 +131,7 @@ app.frame("/check_user_status", async (c) => {
             }
           </Text>
           {/* <Spacer /> */}
-          {!frameUser && !isParticipantOfWork ?
+          {!frameUser && isParticipantOfWork ?
             <Text size='20'>
               To join, you need to apply first. You can decide in apply in-frame or on the web.
             </Text> : <></>
