@@ -101,10 +101,9 @@ app.frame("/check_user_status", async (c) => {
     })
   }
   const fid = frameData.fid
-  const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'username')
+  const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'fid')
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
   // const name = <Text>{state.user.username}</Text>
-  console.log(`/check_status >> frameUser`, frameUser);
 
 
   return c.res({
@@ -121,7 +120,7 @@ app.frame("/check_user_status", async (c) => {
           {/* <Box alignVertical='center'> */}
 
 
-          <Text size='20'>
+          <Text size='20' color={frameUser ? "red" : undefined}>
             {
               frameUser ? `Sorry ${state.user.username}, you'are already a Covariance Contributor` :
                 isParticipantOfWork ?
