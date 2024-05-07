@@ -1,4 +1,4 @@
-import { airtableData } from "@/app/data";
+import { airtableData } from "@/data/index";
 import { getHubs } from "@/utils/airtable/utils";
 
 export async function GET() {

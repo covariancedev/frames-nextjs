@@ -41,6 +41,9 @@
       "@/routes/*": [
         "./routes/*"
       ],
+      "@/data/*": [
+        "./data/*"
+      ],
     }
   },
   "include": [
