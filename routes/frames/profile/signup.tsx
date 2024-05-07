@@ -182,7 +182,7 @@ app.frame("/add_profile_data/:info", async (c) => {
   let sublabel = ''
   let next = ''
   let isError = false
-  const saveToDb = false// !isDev
+  const saveToDb = !isDev
   let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
 
   const emailResponse = info === 'email' ? await airtable.contributors.select({ filterByFormula: `{Email} = '${state.info.email}'`, maxRecords: 1 }).all() : []
