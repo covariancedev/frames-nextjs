@@ -17,7 +17,11 @@ const app = new Frog({
   assetsPath: '/',
   basePath: '/frames',
   apiKey: process.env.AIRSTACK_API_KEY as string,
-  ui: { vars }
+  ui: { vars },
+  verify: process.env.NODE_ENV === 'production',
+  headers: {
+    'cache-control': 'max-age=0',
+  }
 })
 
 // Uncomment to use Edge Runtime

@@ -21,7 +21,7 @@ const app = new Frog<{ State: State }>({
     info: {},
     user: undefined
   },
-  verify: true,
+  verify: process.env.NODE_ENV === 'production',
   headers: {
     'cache-control': 'max-age=0',
   }
@@ -29,7 +29,6 @@ const app = new Frog<{ State: State }>({
 
 
 const isDev = process.env.NODE_ENV === 'development'
-const devFid = 7589
 
 
 
@@ -105,6 +104,8 @@ app.frame("/check_user_status", async (c) => {
   const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'username')
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
   // const name = <Text>{state.user.username}</Text>
+  console.log(`/check_status >> frameUser`, frameUser);
+
 
   return c.res({
     image: (
