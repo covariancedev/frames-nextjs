@@ -21,7 +21,10 @@ const app = new Frog<{ State: State }>({
     info: {},
     user: undefined
   },
-  verify: true
+  verify: true,
+  headers: {
+    'cache-control': 'max-age=0',
+  }
 });
 
 
