@@ -125,15 +125,15 @@ app.frame("/check_user_status", async (c) => {
               frameUser ? `Sorry ${state.user.username}, you're already a Covariance Contributor` :
                 isParticipantOfWork ?
 
-                  `🎉 Congratulations, ${state.user.username}! 🎉 You're part of those allowed to apply`
+                  `🎉 Congratulations, ${state.user.username}! 🎉 You're on the allow list!`
                   :
-                  `Sorry, you are not allowed to create a Covariance profile because you do not belong to the /work channel.`
+                  `Sorry, you are not on the allow list.`
             }
           </Text>
           {/* <Spacer /> */}
           {!frameUser && isParticipantOfWork ?
             <Text size='20'>
-              To join, you need to apply first. You can decide in apply in-frame or on the web.
+              To join, you need to create your contributor profile. Either do in Frame, or on the app.
             </Text> : <></>
           }
 
@@ -144,7 +144,7 @@ app.frame("/check_user_status", async (c) => {
     intents:
       !frameUser && isParticipantOfWork ?
         [
-          <Button.Link href="https://app.covariance.network/registration">Apply Online</Button.Link>,
+          <Button.Link href="https://app.covariance.network/registration">Create Profile Online</Button.Link>,
           <Button
             action={isParticipantOfWork ? "/add_profile_data/start" : undefined}
           >Apply Inline</Button>
