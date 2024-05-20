@@ -187,6 +187,7 @@ app.frame("/add_profile_data/:info", async (c) => {
   let label = ''
   let sublabel = ''
   let next = ''
+  let previous = ''
   let isError = false
   const saveToDb = !isDev
   let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
@@ -229,10 +230,12 @@ app.frame("/add_profile_data/:info", async (c) => {
           "Source": [
             "Covariance"
           ], "Referred by": "Lior Goldenberg",
+          // @ts-ignore
           "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
           "Invite Code": config.inviteCode,
         }, { typecast: true })
 
+      // @ts-ignore
       await addFarcasterInfo(fcUser, contributor.id)
       await redis.hset(`farcaster_contributors:${fid}`, fcUser)
     }
@@ -305,7 +308,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         >
           <VStack gap="20">
             <Heading align="center" size="48">
-              Profile setup:
+              Profile Creation:
             </Heading>
             <Text align="center" size="20">
               {label}
@@ -318,11 +321,11 @@ app.frame("/add_profile_data/:info", async (c) => {
     intents: info !== 'end' ? [
 
       <TextInput placeholder={placeholder} />,
+      <Button.Reset>♻️Reset</Button.Reset>,
       <Button
         action={`/add_profile_data/${next}`}
       >Save and Continue</Button>,
 
-      <Button.Reset>♻️Reset</Button.Reset>
     ] : [<Button.Reset>♻️Reset</Button.Reset>
     ]
   })

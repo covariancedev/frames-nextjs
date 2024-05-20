@@ -1,6 +1,6 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
-import { vars } from '@/utils/ui'
+import { Image, vars } from '@/utils/ui'
 import {
   Frog,
   FarcasterChannelActionType, getFarcasterChannelParticipants
@@ -11,6 +11,9 @@ import { serveStatic } from '@airstack/frog/serve-static'
 import { getFarQuestUserDetails } from '@/utils/farcaster'
 
 import profileSignupFrame from '@/routes/frames/profile/signup'
+import { Button } from 'frog'
+import { backgroundImages, backgroundStyle, bluePrimary } from '@/routes/styles'
+import config from '@/utils/config'
 
 
 const app = new Frog({
@@ -42,6 +45,29 @@ app.hono.get("/channel-followers", async (c) => {
       total: followers?.data?.length ?? 0,
       info: followers
     }
+  })
+})
+
+app.frame("/", c => {
+  return c.res({
+    image: (
+      <>
+        {/* <Image src="/covariance-frame.png" objectFit='contain' /> */}
+        <div style={{ ...backgroundStyle }}>
+          <div
+            style={{
+              ...backgroundStyle,
+              alignItems: "center",
+              justifyContent: "center",
+              // background: `url(${backgroundImages.startScreen})`,
+              background: `url(${config.baseUrl}/covariance-frame.png)`,
+            }} />
+        </div>
+      </>
+    ),
+    intents: [
+      <Button>Start</Button>
+    ]
   })
 })
 
