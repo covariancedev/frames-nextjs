@@ -6,6 +6,7 @@ import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
 import { addFarcasterInfo } from "@/utils/airtable/farcaster";
 import config from "@/utils/config";
+import { ErrorImage } from "../../utils/errors";
 
 type State = {
   info: Record<string, unknown>
@@ -26,6 +27,8 @@ const app = new Frog<{ State: State }>({
     'cache-control': 'max-age=0',
   }
 });
+
+const hub = 'covariance'
 
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -51,7 +54,7 @@ app.frame("/", (c) => {
 
           <Box alignVertical='center'>
             <Text align="center" size="18">
-              Before you are able to join, we'll first need to check you eligibility
+              Before you are able to join, we'll first need to check your eligibility
             </Text>
             {/* <Spacer /> */}
             <Text wrap='balance'>
@@ -90,18 +93,16 @@ app.frame("/check_user_status", async (c) => {
   ) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            fontSize: 40,
-          }}>No information found!</div>
+        <ErrorImage
+          title={`Oops, something went wrong`}
+          subtitle="Send a DC to @lior or ping him in a cast for support"
+        />
       ),
       intents: []
     })
   }
   const fid = frameData.fid
-  const frameUser = await redis.hget<RedisFarcasterUser>(`farcaster_contributors:${fid}`, 'fid')
+  const frameUser = await redis.hget<RedisFarcasterUser>(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, 'fid')
   const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
   // const name = <Text>{state.user.username}</Text>
 
@@ -117,7 +118,6 @@ app.frame("/check_user_status", async (c) => {
       >
         <VStack gap='4'>
           <Heading align="center" size="48">Join Covariance</Heading>
-          {/* <Box alignVertical='center'> */}
 
 
           <Text size='20' color={frameUser ? "red" : undefined}>
@@ -132,9 +132,15 @@ app.frame("/check_user_status", async (c) => {
           </Text>
           {/* <Spacer /> */}
           {!frameUser && isParticipantOfWork ?
-            <Text size='20'>
-              To join, you need to create your contributor profile. Either do in Frame, or on the app.
-            </Text> : <></>
+            <Box>
+              <Text size='20'>
+                To join, you need to create your contributor profile.
+              </Text>
+              <Text size='18'>
+                Either do in Frame, or on the app.
+              </Text>
+            </Box>
+            : <></>
           }
 
           {/* </Box> */}
@@ -146,12 +152,65 @@ app.frame("/check_user_status", async (c) => {
         [
           <Button.Link href="https://app.covariance.network/registration">Create Profile Online</Button.Link>,
           <Button
-            action={isParticipantOfWork ? "/add_profile_data/start" : undefined}
+            action={"/show_notice"}
           >Apply Inline</Button>
         ] :
         [<Button
           action={"/"}
         >Back</Button>],
+  })
+})
+
+app.frame("/show_notice", (c) => {
+  const { inputText, status, frameData, verified, deriveState } = c
+  const state = deriveState()
+  console.log("show_notice", { inputText, status, verified, state });
+
+  if (
+    !frameData || !state.user
+  ) {
+    return c.res({
+      image: (
+        <ErrorImage
+          title={`Oops, something went wrong`}
+          subtitle="Send a DC to @lior or ping him in a cast for support"
+        />
+      ),
+    })
+  }
+
+  return c.res({
+    image: (
+      <Box
+        backgroundColor="secondary"
+        color="primary"
+        padding="32"
+        grow
+        alignVertical="center"
+      >
+        <VStack gap='4'>
+          <Heading align="center" size="48">Disclaimer</Heading>
+
+          <Box>
+            <Text size='20'>
+              The following steps will setup your contributor profile, which will be used to direct opportunities that are most relevant to you
+            </Text>
+            {/* <ErrorImage
+            title={`Oops, something went wrong`}
+            subtitle="Send a DC to @lior or ping him in a cast for support"
+          /> */}
+          </Box>
+        </VStack>
+      </Box>
+    ),
+    intents: [
+      <Button action={"/check_user_status"}>Back</Button>,
+      <Button
+        action={"/add_profile_data/start"}
+      >Continue</Button>,
+      // <Button.Reset>♻️Reset</Button.Reset>,
+
+    ]
   })
 })
 
@@ -172,14 +231,11 @@ app.frame("/add_profile_data/:info", async (c) => {
   ) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            fontSize: 40,
-          }}>No information found!</div>
+        <ErrorImage
+          title={`Oops, something went wrong`}
+          subtitle="Send a DC to @lior or ping him in a cast for support"
+        />
       ),
-      intents: []
     })
   }
   const fid = frameData.fid
@@ -237,7 +293,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
       // @ts-ignore
       await addFarcasterInfo(fcUser, contributor.id)
-      await redis.hset(`farcaster_contributors:${fid}`, fcUser)
+      await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
     }
   }
   // 1. email
@@ -246,35 +302,47 @@ app.frame("/add_profile_data/:info", async (c) => {
   // 4. role
   // 5. expertise
   // 6. end
+  const checkError = !['end', 'start'].includes(info)
+  console.log('checkError', { checkError, inputText })
+
+  if ((checkError) && !inputText) {
+    return c.error({ message: "Invalid input: Text cannot be empty" })
+
+  }
 
   switch (info) {
 
     case 'email':
       next = 'name'
+      previous = 'start'
       placeholder = "John Doe"
       label = "What's your full name?"
       break
 
     case 'name':
       next = "company"
-      placeholder = "Covariance"
+      previous = "email"
+      placeholder = "Company or organization you identify with?"
       label = "What's your company name?"
       break;
 
     case 'company':
       next = "role"
+      previous = "name"
       placeholder = "CEO"
       label = "What's your role at the company?"
       break;
 
     case 'role':
       next = "expertise"
-      placeholder = "Videos, VC, NFTs, etc."
+      previous = "company"
+      placeholder = "i.e - Investment, DeFi, DAO’s,"
       label = "What are your top 5 areas of expertise?"
       break;
 
     case 'expertise':
       next = "end"
+      previous = "role"
       placeholder = "I love to code"
       label = "Anything else we need to know about you?"
       sublabel = `(optional. Enter 'none' if not applicable)`
@@ -289,6 +357,7 @@ app.frame("/add_profile_data/:info", async (c) => {
       next = 'email'
       placeholder = "email@example.com"
       label = "What's your email address?"
+      sublabel = "This will be used to create your profile on the app so you can login."
       break
   }
 
@@ -303,17 +372,22 @@ app.frame("/add_profile_data/:info", async (c) => {
           alignVertical="center"
           backgroundColor='secondary'
           color='primary'
-          padding="32"
+          padding='128'
+          height={'100%'}
+
         // border="1em solid rgb(138, 99, 210)"
         >
           <VStack gap="20">
             <Heading align="center" size="48">
               Profile Creation:
             </Heading>
-            <Text align="center" size="20">
-              {label}
-            </Text>
-            {sublabel.length > 1 ? <Text size="20" align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
+            <Box gap={'10'}>
+              <Text align="center" size="20">
+                {label}
+              </Text>
+              {sublabel.length > 1 ? <Text size='16' align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
+
+            </Box>
           </VStack>
         </Box>
       </>
@@ -321,7 +395,9 @@ app.frame("/add_profile_data/:info", async (c) => {
     intents: info !== 'end' ? [
 
       <TextInput placeholder={placeholder} />,
-      <Button.Reset>♻️Reset</Button.Reset>,
+      ...[previous !== '' ? <Button action={`/add_profile_data/${previous}`}>Back</Button> :
+        <Button.Reset>♻️Reset</Button.Reset>,
+      ],
       <Button
         action={`/add_profile_data/${next}`}
       >Save and Continue</Button>,

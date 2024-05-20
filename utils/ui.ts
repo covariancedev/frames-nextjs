@@ -1,4 +1,4 @@
-import { createSystem } from "@airstack/frog/ui";
+import { colors, createSystem, defaultVars } from "@airstack/frog/ui";
 
 export const {
   Box,
@@ -17,6 +17,7 @@ export const {
   vars,
 } = createSystem({
   colors: {
+    ...colors.light,
     white: "white",
     black: "black",
     fcPurple: "rgb(138, 99, 210)",

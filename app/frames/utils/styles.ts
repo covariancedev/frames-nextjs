@@ -1,3 +1,5 @@
+// @see https://github.com/thenamespace/namespace-frames-public/blob/master/src/mint-subnames-frame/styles.ts#L12
+
 export const bluePrimary = "#3888ff";
 export const greySecondary = "#9c9c9c";
 

@@ -1,6 +1,6 @@
 /** @jsxImportSource @airstack/frog/jsx */
 
-import { Image, vars } from '@/utils/ui'
+import { vars } from '@/utils/ui'
 import {
   Frog,
   FarcasterChannelActionType, getFarcasterChannelParticipants
@@ -10,9 +10,8 @@ import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
 import { getFarQuestUserDetails } from '@/utils/farcaster'
 
-import profileSignupFrame from '@/routes/frames/profile/signup'
+import profileSignupFrame from '../routes/profile/signup'
 import { Button } from 'frog'
-import { backgroundImages, backgroundStyle, bluePrimary } from '@/routes/styles'
 import config from '@/utils/config'
 
 
@@ -50,30 +49,23 @@ app.hono.get("/channel-followers", async (c) => {
 
 app.frame("/", c => {
   return c.res({
-    image: (
-      <>
-        {/* <Image src="/covariance-frame.png" objectFit='contain' /> */}
-        <div style={{ ...backgroundStyle }}>
-          <div
-            style={{
-              ...backgroundStyle,
-              alignItems: "center",
-              justifyContent: "center",
-              // background: `url(${backgroundImages.startScreen})`,
-              background: `url(${config.baseUrl}/covariance-frame.png)`,
-            }} />
-        </div>
-      </>
-    ),
+    image: `${config.baseUrl}/covariance-frame.png`,
+    imageAspectRatio: "1:1",
+    imageOptions: {
+      height: 1071,
+      width: 1071,
+    },
     intents: [
       <Button action='/profile_signup'>Start</Button>
     ]
   })
 })
 
+app.frame("/nope",
+  c => c.error({ message: 'Bad inputs!' })
+)
+
 app.route("/profile_signup", profileSignupFrame);
-
-
 
 app.hono.get('/healthcheck', (c) => {
   return c.text('ribbit')
