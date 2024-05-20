@@ -66,7 +66,7 @@ app.frame("/", c => {
       </>
     ),
     intents: [
-      <Button>Start</Button>
+      <Button action='/profile_signup'>Start</Button>
     ]
   })
 })
