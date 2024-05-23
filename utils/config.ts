@@ -10,6 +10,8 @@ export default {
       tables: {
         contributors: getEnvOrThrow("AIRTABLE_CONTRIBUTORS_TABLE_ID"),
         farcaster: getEnvOrThrow("AIRTABLE_FARCASTER_PROFILE_TABLE_ID"),
+        user_group:
+          process.env.AIRTABLE_USER_GROUP_TABLE_ID || "tblHb3Gme0EplWznL",
       },
     },
   },

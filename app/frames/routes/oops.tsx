@@ -1,6 +1,6 @@
-/** @jsxImportSource frog/jsx */
+/** @jsxImportSource @airstack/frog/jsx */
 
-import { Frog } from "frog"
+import { Frog } from "@airstack/frog"
 
 export const app = new Frog()
 

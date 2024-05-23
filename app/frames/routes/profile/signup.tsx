@@ -271,6 +271,9 @@ app.frame("/add_profile_data/:info", async (c) => {
 
   if (info === 'end') {
     if (saveToDb) {
+
+
+
       const fcUser = await getFcUser(state.user.username)
 
       const contributor =
@@ -310,56 +313,89 @@ app.frame("/add_profile_data/:info", async (c) => {
 
   }
 
+
+
+  if (info === 'email') {
+    const email = state.info.email as string
+
+    if (!email || email.length < 5) {
+      sublabel = `Please enter a valid email address.`
+      isError = true
+      info = 'start'
+    } else if (!email.includes('@')) {
+      sublabel = `Please enter a valid email address.`
+      isError = true
+      info = 'start'
+    } else {
+      const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
+
+      if (userGroup[0]) {
+        console.log(`user group for ${state.info.email}`, userGroup[0]);
+      } else {
+
+      }
+
+    }
+  }
+
   switch (info) {
 
-    case 'email':
+    case 'email': {
       next = 'name'
       previous = 'start'
       placeholder = "John Doe"
       label = "What's your full name?"
+    }
       break
 
-    case 'name':
+    case 'name': {
       next = "company"
       previous = "email"
       placeholder = "Company or organization you identify with?"
       label = "What's your company name?"
+    }
       break;
 
-    case 'company':
+    case 'company': {
       next = "role"
       previous = "name"
       placeholder = "CEO"
       label = "What's your role at the company?"
+    }
       break;
 
-    case 'role':
+    case 'role': {
       next = "expertise"
       previous = "company"
       placeholder = "i.e - Investment, DeFi, DAO’s,"
       label = "What are your top 5 areas of expertise?"
+    }
       break;
 
-    case 'expertise':
+    case 'expertise': {
       next = "end"
       previous = "role"
       placeholder = "I love to code"
       label = "Anything else we need to know about you?"
       sublabel = `(optional. Enter 'none' if not applicable)`
+    }
       break;
 
-    case 'end':
+    case 'end': {
       label = "Thank you for providing your information."
       sublabel = `We will get back to you soon.`
+    }
       break;
 
-    default:
+    default: {
       next = 'email'
       placeholder = "email@example.com"
       label = "What's your email address?"
       sublabel = "This will be used to create your profile on the app so you can login."
+    }
       break
   }
+
 
   console.log(`info: ${info}`, fid);
 
