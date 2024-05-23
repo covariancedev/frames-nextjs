@@ -244,203 +244,184 @@ app.frame("/add_profile_data/:info", async (c) => {
   let sublabel = ''
   let next = ''
   let previous = ''
+  let userGroupId = ''
   let isError = false
   const saveToDb = !isDev
   let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
 
-  const emailResponse = info === 'email' ? await airtable.contributors.select({ filterByFormula: `{Email} = '${state.info.email}'`, maxRecords: 1 }).all() : []
+  try {
 
-  if (info === 'email' && emailResponse.length > 0) {
-    console.log('emailResponse', emailResponse[0].id);
 
-    sublabel = `${state.info.email} is already in use.`
-    isError = true
-    info = 'start'
-  }
 
-  if (info === 'expertise') {
-    if (expertise.length > 5) {
+    if (info === 'end') {
+      if (saveToDb) {
 
-      sublabel = `Please enter at least 5 areas of expertise.`
-      isError = true
-      info = 'role'
+
+
+        const fcUser = await getFcUser(state.user.username)
+
+        const userGroup = await airtable.user_group.create({
+          "Name": state.info.name as string,
+          "E-mail": state.info.email as string,
+          "Telegram": state.user.username,
+        })
+
+        userGroupId = userGroup.id
+
+        const contributor =
+          await airtable.contributors.create({
+            Name: state.info.name as string,
+            Email: state.info.email as string,
+            Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
+            Role: state.info.role as string,
+            Company: state.info.company as string,
+            ToS: true,
+            Farcaster: `https://warpcast.com/${state.user.username}`,
+            fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
+            "Source": [
+              "Covariance"
+            ], "Referred by": "Lior Goldenberg",
+            // @ts-ignore
+            "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
+            "Invite Code": config.inviteCode,
+          }, { typecast: true })
+
+        // @ts-ignore
+        await addFarcasterInfo(fcUser, contributor.id)
+        await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
+      }
     }
-    expertise = expertise.slice(0, 5)
 
-  }
+    const checkError = !['end', 'start'].includes(info)
+    console.log('checkError', { checkError, inputText })
 
-  if (info === 'end') {
-    if (saveToDb) {
-
-
-
-      const fcUser = await getFcUser(state.user.username)
-
-      const contributor =
-        await airtable.contributors.create({
-          Name: state.info.name as string,
-          Email: state.info.email as string,
-          Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
-          Role: state.info.role as string,
-          Company: state.info.company as string,
-          ToS: true,
-          Farcaster: `https://warpcast.com/${state.user.username}`,
-          fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
-          "Source": [
-            "Covariance"
-          ], "Referred by": "Lior Goldenberg",
-          // @ts-ignore
-          "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
-          "Invite Code": config.inviteCode,
-        }, { typecast: true })
-
-      // @ts-ignore
-      await addFarcasterInfo(fcUser, contributor.id)
-      await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
-    }
-  }
-  // 1. email
-  // 2. name
-  // 3. company
-  // 4. role
-  // 5. expertise
-  // 6. end
-  const checkError = !['end', 'start'].includes(info)
-  console.log('checkError', { checkError, inputText })
-
-  if ((checkError) && !inputText) {
-    return c.error({ message: "Invalid input: Text cannot be empty" })
-
-  }
-
-
-
-  if (info === 'email') {
-    const email = state.info.email as string
-
-    if (!email || email.length < 5) {
-      sublabel = `Please enter a valid email address.`
-      isError = true
-      info = 'start'
-    } else if (!email.includes('@')) {
-      sublabel = `Please enter a valid email address.`
-      isError = true
-      info = 'start'
-    } else {
-      const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
-
-      if (userGroup[0]) {
-        console.log(`user group for ${state.info.email}`, userGroup[0]);
+    if ((checkError)) {
+      let message = 'Invalid input: '
+      if (!inputText) {
+        message += 'Text cannot be empty'
       } else {
+
+
+        if (info === 'email') {
+          const email = state.info.email as string
+
+          if (!email.includes('@')) {
+            message = `Invalid email address captured`
+          } else {
+            const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
+
+            if (userGroup[0]) {
+              console.log(`user group for ${state.info.email}`, userGroup[0]);
+              message = `Email address already in use.`
+            }
+
+          }
+        }
 
       }
 
+      return c.error({ message })
+
     }
+
+    // 1. email (default)
+    // 2. name
+    // 3. telegram username
+    // 4. end
+    switch (info) {
+
+      case 'email': {
+        next = 'name'
+        previous = 'start'
+        placeholder = "John Doe"
+        label = "What's your full name?"
+      }
+        break
+
+      case 'name': {
+        next = "telegram"
+        previous = "email"
+        placeholder = "Company or organization you identify with?"
+        label = "What's your company name?"
+      }
+        break;
+
+      case 'telegram': {
+        next = "end"
+        previous = "name"
+        placeholder = "durov"
+        label = "What's your telegram username?"
+        sublabel = `We will use this to cross check your farcaster profile on Telegram`
+      }
+        break;
+
+      case 'end': {
+        label = "Thank you for providing your information."
+        sublabel = `We will get back to you soon.`
+      }
+        break;
+
+      default: {
+        next = 'email'
+        placeholder = "email@example.com"
+        label = "What's your email address?"
+        sublabel = "This will be used to create your profile on the app so you can login."
+      }
+        break
+    }
+
+
+    console.log(`info: ${info}`, fid);
+
+
+    return c.res({
+      image: (
+        <>
+          <Box
+            grow
+            alignVertical="center"
+            backgroundColor='secondary'
+            color='primary'
+            padding='128'
+            height={'100%'}
+
+          // border="1em solid rgb(138, 99, 210)"
+          >
+            <VStack gap="20">
+              <Heading align="center" size="48">
+                Profile Creation:
+              </Heading>
+              <Box gap={'10'}>
+                <Text align="center" size="20">
+                  {label}
+                </Text>
+                {sublabel.length > 1 ? <Text size='16' align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
+
+              </Box>
+            </VStack>
+          </Box>
+        </>
+      ),
+      intents: info !== 'end' ? [
+
+        <TextInput placeholder={placeholder} />,
+        ...[previous !== '' ? <Button action={`/add_profile_data/${previous}`}>Back</Button> :
+          <Button.Reset>♻️Reset</Button.Reset>,
+        ],
+        <Button
+          action={`/add_profile_data/${next}`}
+        >Save and Continue</Button>,
+
+      ] :
+        [
+          <Button.Link href={`https://t.me/CovarianceBot?start=magic_${userGroupId}`}>🤖 Chat with CovarianceBot</Button.Link>
+        ]
+    })
+
+  } catch (e) {
+    const error = e as Error
+    return c.error({ message: error.message })
   }
-
-  switch (info) {
-
-    case 'email': {
-      next = 'name'
-      previous = 'start'
-      placeholder = "John Doe"
-      label = "What's your full name?"
-    }
-      break
-
-    case 'name': {
-      next = "company"
-      previous = "email"
-      placeholder = "Company or organization you identify with?"
-      label = "What's your company name?"
-    }
-      break;
-
-    case 'company': {
-      next = "role"
-      previous = "name"
-      placeholder = "CEO"
-      label = "What's your role at the company?"
-    }
-      break;
-
-    case 'role': {
-      next = "expertise"
-      previous = "company"
-      placeholder = "i.e - Investment, DeFi, DAO’s,"
-      label = "What are your top 5 areas of expertise?"
-    }
-      break;
-
-    case 'expertise': {
-      next = "end"
-      previous = "role"
-      placeholder = "I love to code"
-      label = "Anything else we need to know about you?"
-      sublabel = `(optional. Enter 'none' if not applicable)`
-    }
-      break;
-
-    case 'end': {
-      label = "Thank you for providing your information."
-      sublabel = `We will get back to you soon.`
-    }
-      break;
-
-    default: {
-      next = 'email'
-      placeholder = "email@example.com"
-      label = "What's your email address?"
-      sublabel = "This will be used to create your profile on the app so you can login."
-    }
-      break
-  }
-
-
-  console.log(`info: ${info}`, fid);
-
-
-  return c.res({
-    image: (
-      <>
-        <Box
-          grow
-          alignVertical="center"
-          backgroundColor='secondary'
-          color='primary'
-          padding='128'
-          height={'100%'}
-
-        // border="1em solid rgb(138, 99, 210)"
-        >
-          <VStack gap="20">
-            <Heading align="center" size="48">
-              Profile Creation:
-            </Heading>
-            <Box gap={'10'}>
-              <Text align="center" size="20">
-                {label}
-              </Text>
-              {sublabel.length > 1 ? <Text size='16' align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
-
-            </Box>
-          </VStack>
-        </Box>
-      </>
-    ),
-    intents: info !== 'end' ? [
-
-      <TextInput placeholder={placeholder} />,
-      ...[previous !== '' ? <Button action={`/add_profile_data/${previous}`}>Back</Button> :
-        <Button.Reset>♻️Reset</Button.Reset>,
-      ],
-      <Button
-        action={`/add_profile_data/${next}`}
-      >Save and Continue</Button>,
-
-    ] : [<Button.Reset>♻️Reset</Button.Reset>
-    ]
-  })
 })
 
 export default app;
