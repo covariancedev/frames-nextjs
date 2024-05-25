@@ -176,6 +176,12 @@ export async function getFarcasterUserAllowedList(fid: number) {
       },
     ],
   };
+
+  const tokensHolding: NonNullable<
+    Parameters<
+      NonNullable<CreateAllowListInput["isAllowedFunction"]>
+    >[number]["isTokensHold"]
+  > = [];
   const input: CreateAllowListInput = {
     fid,
     allowListCriteria,
@@ -184,7 +190,15 @@ export async function getFarcasterUserAllowedList(fid: number) {
         `getFarcasterUserAllowedList.isAllowedFunction >> data`,
         data
       );
-      return data.isTokensHold?.length ? true : false;
+      const tokens = data.isTokensHold?.filter((t) => t.isHold);
+
+      if (tokens) {
+        for (const token of tokens) {
+          tokensHolding.push(token);
+        }
+      }
+
+      return tokens?.length ? true : false;
     },
   };
 
@@ -198,7 +212,7 @@ export async function getFarcasterUserAllowedList(fid: number) {
   } // throw new Error(error);
 
   console.log("getFarcasterUserAllowedList", isAllowed);
-  return isAllowed;
+  return { isAllowed, tokensHolding };
 }
 
 const FARQUEST_BASE_URL = "https://build.far.quest/farcaster/v2";
