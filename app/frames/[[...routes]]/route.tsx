@@ -8,7 +8,7 @@ import {
 import { devtools } from '@airstack/frog/dev'
 import { handle } from '@airstack/frog/next'
 import { serveStatic } from '@airstack/frog/serve-static'
-import { getFarQuestUserDetails } from '@/utils/farcaster'
+import { getFarQuestUserDetails, getFarcasterUserAllowedList } from '@/utils/farcaster'
 
 import profileSignupFrame from '../routes/profile/signup'
 import { Button } from 'frog'
@@ -45,6 +45,18 @@ app.hono.get("/channel-followers", async (c) => {
       info: followers
     }
   })
+})
+
+app.hono.get("/allow-list/:id", async c => {
+  const fid = Number(c.req.param('id'))
+  try {
+
+    const allowed = await getFarcasterUserAllowedList(fid)
+    return c.json({ allowed })
+  } catch (e) {
+    const error = e as Error
+    return c.json({ error: error.message })
+  }
 })
 
 app.frame("/", c => {

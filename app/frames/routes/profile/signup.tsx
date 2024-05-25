@@ -263,7 +263,6 @@ app.frame("/add_profile_data/:info", async (c) => {
         const userGroup = await airtable.user_group.create({
           "Name": state.info.name as string,
           "E-mail": state.info.email as string,
-          "Telegram": state.user.username,
         })
 
         userGroupId = userGroup.id
@@ -272,19 +271,24 @@ app.frame("/add_profile_data/:info", async (c) => {
           await airtable.contributors.create({
             Name: state.info.name as string,
             Email: state.info.email as string,
-            Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
-            Role: state.info.role as string,
-            Company: state.info.company as string,
+            // Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
+            // Role: state.info.role as string,
+            // Company: state.info.company as string,
             ToS: true,
+            "Telegram": state.user.username,
             Farcaster: `https://warpcast.com/${state.user.username}`,
-            fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
+            // expertise
+            // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
             "Source": [
-              "Covariance"
-            ], "Referred by": "Lior Goldenberg",
+              "Farcaster"
+            ],
+            "Referred by": "Lior Goldenberg",
             // @ts-ignore
             "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
             "Invite Code": config.inviteCode,
-          }, { typecast: true })
+          },
+            { typecast: true }
+          )
 
         // @ts-ignore
         await addFarcasterInfo(fcUser, contributor.id)

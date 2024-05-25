@@ -119,21 +119,59 @@ export async function isFarcasterUserParticipantOfWorkChannel(
 }
 
 export async function getFarcasterUserAllowedList(fid: number) {
-  const allowListCriteria = {
-    eventIds: [166577],
-    numberOfFollowersOnFarcaster: 100,
-    isFollowingOnFarcaster: [2602],
+  const allowListCriteria: CreateAllowListInput["allowListCriteria"] = {
+    // eventIds: [166577],
+    // numberOfFollowersOnFarcaster: 100,
+    // isFollowingOnFarcaster: [2602],
     tokens: [
       {
-        tokenAddress: "0x95cb845b525f3a2126546e39d84169f1eca8c77f",
-        chain: TokenBlockchain.Ethereum,
-      },
-      {
-        tokenAddress: "0x2d45c399d7ca25341992038f12610c41a00a66ed",
+        // CoLaborator token
+        tokenAddress: "0x5db2c0d02177904eef4091f5e27a249432f4410c",
         chain: TokenBlockchain.Base,
       },
       {
-        tokenAddress: "0x743658ace931ea241dd0cb4ed38ec72cc8162ce1",
+        // FarCon 1 (Eth)
+        tokenAddress: "0x2a9ea02e4c2dcd56ba20628fe1bd46bae2c62746",
+        chain: TokenBlockchain.Ethereum,
+      },
+      {
+        // FarCon 2
+        tokenAddress: "0x43ad2d5bd48de6d20530a48b5c357e26459afb3c",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // WeCast
+        tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // SomeSocial (Base)
+        tokenAddress: "0x27EF05bA3097Ffe5037ec4c03152cf9725f7E037",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // CoCreated Launch (Zora) /4
+        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+        chain: TokenBlockchain.Zora,
+      },
+      {
+        // FC Fall (Zora) /2
+        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+        chain: TokenBlockchain.Zora,
+      },
+      {
+        // FC Holiday (Zora) /5
+        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+        chain: TokenBlockchain.Zora,
+      },
+      {
+        // We are Farcaster  (Base)
+        tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // Failure Contract (Zora)
+        tokenAddress: "0x7363d7498c0d11f8698049ecd15a7ffda4a015c8",
         chain: TokenBlockchain.Zora,
       },
     ],
@@ -142,7 +180,10 @@ export async function getFarcasterUserAllowedList(fid: number) {
     fid,
     allowListCriteria,
     isAllowedFunction: function (data) {
-      console.log(data);
+      console.log(
+        `getFarcasterUserAllowedList.isAllowedFunction >> data`,
+        data
+      );
       return true;
     },
   };
@@ -153,10 +194,11 @@ export async function getFarcasterUserAllowedList(fid: number) {
 
   if (error) {
     console.error("getFarcasterUserAllowedList", error);
-    return;
+    return false;
   } // throw new Error(error);
 
   console.log("getFarcasterUserAllowedList", isAllowed);
+  return isAllowed;
 }
 
 const FARQUEST_BASE_URL = "https://build.far.quest/farcaster/v2";
