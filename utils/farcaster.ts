@@ -184,7 +184,7 @@ export async function getFarcasterUserAllowedList(fid: number) {
         `getFarcasterUserAllowedList.isAllowedFunction >> data`,
         data
       );
-      return true;
+      return data.isTokensHold?.length ? true : false;
     },
   };
 
