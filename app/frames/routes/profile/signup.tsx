@@ -361,7 +361,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
       case 'end': {
         label = "Thank you for providing your information."
-        sublabel = `We will get back to you soon.`
+        sublabel = `Have a chat with our telegram bot for the group link and login information.`
       }
         break;
 
@@ -418,7 +418,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
       ] :
         [
-          <Button.Link href={`https://t.me/CovarianceBot?start=magic_${userGroupId}`}>🤖 Chat with CovarianceBot</Button.Link>
+          <Button.Link href={`https://t.me/CovarianceBot?start=magic_${userGroupId}`}>🤖 Chat with CovarianceAiBot</Button.Link>
         ]
     })
 
