@@ -2,7 +2,7 @@
 import { Box, Heading, Text, VStack, vars } from "@/utils/ui";
 import { Button, Frog, TextInput } from "@airstack/frog";
 import { getFarQuestUserDetails, getFcUser, isFarcasterUserParticipantOfWorkChannel } from "@/utils/farcaster";
-import { redis } from "@/utils/redis";
+// import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
 import { addFarcasterInfo } from "@/utils/airtable/farcaster";
 import config from "@/utils/config";
@@ -13,7 +13,7 @@ type State = {
   user?: Awaited<ReturnType<typeof getFarQuestUserDetails>>
 }
 
-type RedisFarcasterUser = Awaited<ReturnType<typeof getFcUser>>
+// type RedisFarcasterUser = Awaited<ReturnType<typeof getFcUser>>
 
 const app = new Frog<{ State: State }>({
   apiKey: process.env.AIRSTACK_API_KEY as string,
@@ -28,7 +28,7 @@ const app = new Frog<{ State: State }>({
   }
 });
 
-const hub = 'covariance'
+// const hub = 'covariance'
 
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -102,8 +102,9 @@ app.frame("/check_user_status", async (c) => {
     })
   }
   const fid = frameData.fid
-  const frameUser = await redis.hget<RedisFarcasterUser>(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, 'fid')
-  const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
+  // const frameUser = await redis.hget<RedisFarcasterUser>(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, 'fid')
+  // const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
+  const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
   // const name = <Text>{state.user.username}</Text>
 
 
@@ -120,18 +121,19 @@ app.frame("/check_user_status", async (c) => {
           <Heading align="center" size="48">Join Covariance</Heading>
 
 
-          <Text size='20' color={frameUser ? "red" : undefined}>
+          {/* <Text size='20' color={frameUser ? "red" : undefined}> */}
+          <Text size='20' color={undefined}>
             {
-              frameUser ? `Sorry ${state.user.username}, you're already a Covariance Contributor` :
-                isParticipantOfWork ?
+              // frameUser ? `Sorry ${state.user.username}, you're already a Covariance Contributor` :
+              isParticipantOfWork ?
 
-                  `🎉 Congratulations, ${state.user.username}! 🎉 You're on the allow list!`
-                  :
-                  `Sorry, you are not on the allow list.`
+                `🎉 Congratulations, ${state.user.username}! 🎉 You're on the allow list!`
+                :
+                `Sorry, you are not on the allow list.`
             }
           </Text>
           {/* <Spacer /> */}
-          {!frameUser && isParticipantOfWork ?
+          {isParticipantOfWork ?
             <Box>
               <Text size='20'>
                 To join, you need to create your contributor profile.
@@ -148,7 +150,8 @@ app.frame("/check_user_status", async (c) => {
       </Box>
     ),
     intents:
-      !frameUser && isParticipantOfWork ?
+      // !frameUser &&
+      isParticipantOfWork ?
         [
           <Button.Link href="https://app.covariance.network/registration">Create Profile Online</Button.Link>,
           <Button
@@ -247,7 +250,6 @@ app.frame("/add_profile_data/:info", async (c) => {
   let userGroupId = ''
   let isError = false
   const saveToDb = !isDev
-  let expertise = ((state.info.expertise ?? '') as string).split(',').map((e: string) => e.toLowerCase().trim())
 
   try {
 
@@ -294,40 +296,85 @@ app.frame("/add_profile_data/:info", async (c) => {
 
         // @ts-ignore
         await addFarcasterInfo(fcUser, contributor.id)
-        await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
+        // await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
       }
     }
 
     const checkError = !['end', 'start'].includes(info)
+    let emailExists = false
+    let magicLink: string | undefined = undefined
     console.log('checkError', { checkError, inputText })
 
-    if ((checkError)) {
-      let message = 'Invalid input: '
-      if (!inputText) {
-        message += 'Text cannot be empty'
-      } else {
+    checkingErrors: {
+
+      if ((checkError)) {
+        let message = 'Invalid input: '
+        if (!inputText) {
+          message += 'Text cannot be empty'
+        } else {
 
 
-        if (info === 'email') {
-          const email = state.info.email as string
+          if (info === 'email') {
+            const email = state.info.email as string
 
-          if (!email.includes('@')) {
-            message = `Invalid email address captured`
-          } else {
-            const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
+            if (!email.includes('@')) {
+              message = `Invalid email address captured`
+            } else {
+              const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
 
-            if (userGroup[0]) {
-              console.log(`user group for ${state.info.email}`, userGroup[0]);
-              message = `Email address already in use.`
+              if (userGroup[0]) {
+                console.log(`user group for ${state.info.email}`, userGroup[0]);
+                message = `Email address already in use.`
+                emailExists = true
+                if (saveToDb) {
+                  magicLink = userGroup[0].fields['Magic Link'] as string
+                }
+                break checkingErrors
+              }
+
             }
-
           }
+
         }
+
+        return c.error({ message })
 
       }
 
-      return c.error({ message })
+    }
 
+    if (emailExists) {
+      state.info = {}
+      return c.res({
+        image: (
+          <Box
+            grow
+            alignVertical="center"
+            backgroundColor='secondary'
+            color='primary'
+            padding='128'
+            height={'100%'}
+
+          // border="1em solid rgb(138, 99, 210)"
+          >
+            <VStack gap="20">
+              <Heading align="center" size="48">
+                Contributor found
+              </Heading>
+              <Box gap={'10'}>
+                <Text align="center" size="20">
+                  Sorry, you're already part of Covariance's network. Click the button below to go to the platform.
+                </Text>
+                {/* <Text size='16' align="center" color='red'>{sublabel}</Text>
+                <Text size='16' align="center" color='red'>Magic Link: {magicLink}</Text> */}
+              </Box>
+            </VStack>
+          </Box>
+        ),
+        intents: [
+          <Button action={magicLink ?? "https://app.covariance.network"}>🔗 Go to Platform</Button>
+        ]
+      })
     }
 
     // 1. email (default)
