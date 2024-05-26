@@ -265,6 +265,8 @@ app.frame("/add_profile_data/:info", async (c) => {
           "E-mail": state.info.email as string,
         })
 
+        console.log(`user group created`, userGroup)
+
         userGroupId = userGroup.id
 
         const contributor =
