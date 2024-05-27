@@ -229,7 +229,7 @@ app.frame("/add_profile_data/:info", async (c) => {
   const { inputText, status, frameData, deriveState, verified } = c
   const state = deriveState(previousState => {
     if (inputText && !['start'].includes(info)) {
-      previousState.info[info === 'end' ? 'about' : info] = inputText
+      previousState.info[info === 'end' ? 'telegram' : info] = inputText
     }
   })
 
@@ -261,6 +261,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
     if (info === 'end') {
       console.log(`add_profile_data >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
+      console.log(`add_profile_data >> state.info: `, state.info);
       if (saveToDb) {
 
 
@@ -271,7 +272,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         const userGroup = await airtable.user_group.create({
           "Name": state.info.name as string,
           "E-mail": state.info.email as string,
-          "Farcaster": `https://warpcast.com/${state.info.username}`
+          "Farcaster": `https://warpcast.com/${state.user.username}`
         })
 
         console.log(`user group created`, userGroup)
@@ -287,7 +288,7 @@ app.frame("/add_profile_data/:info", async (c) => {
             // Company: state.info.company as string,
             ToS: true,
             "Telegram": state.info.telegram as string,
-            Farcaster: `https://warpcast.com/${state.info.username}`,
+            Farcaster: `https://warpcast.com/${state.user.username}`,
             // expertise
             // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
             "Source": [
