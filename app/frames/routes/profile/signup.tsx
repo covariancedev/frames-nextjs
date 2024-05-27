@@ -271,6 +271,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         const userGroup = await airtable.user_group.create({
           "Name": state.info.name as string,
           "E-mail": state.info.email as string,
+          "Farcaster": farcasterUrl,
         })
 
         console.log(`user group created`, userGroup)
