@@ -326,6 +326,7 @@ app.frame("/add_profile_data/:info", async (c) => {
               message = `Invalid email address captured`
             } else {
               const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
+              console.log(`user group for ${state.info.email}`, userGroup[0]);
 
               if (userGroup[0]) {
                 console.log(`user group for ${state.info.email}`, userGroup[0]);
@@ -336,7 +337,7 @@ app.frame("/add_profile_data/:info", async (c) => {
                 }
                 break checkingErrors
               }
-
+              break checkingErrors
             }
           }
 
@@ -463,9 +464,11 @@ app.frame("/add_profile_data/:info", async (c) => {
       intents: info !== 'end' ? [
 
         <TextInput placeholder={placeholder} />,
-        ...[previous !== '' ? <Button action={`/add_profile_data/${previous}`}>Back</Button> :
-          <Button.Reset>♻️Reset</Button.Reset>,
-        ],
+        // ...[previous !== '' ? 
+        <Button action={`/add_profile_data/${previous}`}>Back</Button>,
+        //  :
+        <Button.Reset>♻️Reset</Button.Reset>,
+        // ],
         <Button
           action={`/add_profile_data/${next}`}
         >Save and Continue</Button>,
