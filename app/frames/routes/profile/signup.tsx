@@ -255,6 +255,7 @@ app.frame("/add_profile_data/:info", async (c) => {
   let userGroupId = ''
   let isError = false
   const saveToDb = !isDev
+  const farcasterUrl = `https://warpcast.com/${state.user.username}`
 
   try {
 
@@ -263,7 +264,7 @@ app.frame("/add_profile_data/:info", async (c) => {
     if (info === 'end') {
       if (saveToDb) {
 
-
+        const dbProfile = await airtable.contributors.select({ filterByFormula: `{Farcaster} = '${farcasterUrl}'`, maxRecords: 1 }).all()
 
         const fcUser = await getFcUser(state.user.username)
 
@@ -285,7 +286,7 @@ app.frame("/add_profile_data/:info", async (c) => {
             // Company: state.info.company as string,
             ToS: true,
             "Telegram": state.user.username,
-            Farcaster: `https://warpcast.com/${state.user.username}`,
+            Farcaster: farcasterUrl,
             // expertise
             // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
             "Source": [
@@ -335,12 +336,15 @@ app.frame("/add_profile_data/:info", async (c) => {
                 if (saveToDb) {
                   magicLink = userGroup[0].fields['Magic Link'] as string
                 }
+                // break checkingErrors
+              } else {
                 break checkingErrors
               }
-              break checkingErrors
             }
+          } else {
+
+            break checkingErrors
           }
-          break checkingErrors
         }
 
         return c.error({ message })
