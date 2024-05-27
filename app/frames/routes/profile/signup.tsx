@@ -340,7 +340,7 @@ app.frame("/add_profile_data/:info", async (c) => {
               break checkingErrors
             }
           }
-
+          break checkingErrors
         }
 
         return c.error({ message })
