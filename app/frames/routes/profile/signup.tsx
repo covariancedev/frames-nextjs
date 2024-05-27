@@ -263,8 +263,10 @@ app.frame("/add_profile_data/:info", async (c) => {
 
     if (info === 'end') {
       if (saveToDb) {
+        console.log(`add_profile_data >> farcasterUrl`, farcasterUrl);
 
-        const dbProfile = await airtable.contributors.select({ filterByFormula: `{Farcaster} = '${farcasterUrl}'`, maxRecords: 1 }).all()
+
+        // const dbProfile = await airtable.contributors.select({ filterByFormula: `{Farcaster} = '${farcasterUrl}'`, maxRecords: 1 }).all()
 
         const fcUser = await getFcUser(state.user.username)
 
@@ -486,6 +488,8 @@ app.frame("/add_profile_data/:info", async (c) => {
 
   } catch (e) {
     const error = e as Error
+    console.error(`Error in add_profile_data`, error);
+
     return c.error({ message: error.message })
   }
 })
