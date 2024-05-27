@@ -142,7 +142,14 @@ app.frame("/check_user_status", async (c) => {
                 Either do in Frame, or on the app.
               </Text>
             </Box>
-            : <></>
+            : <Box>
+              <Text size='20'>
+                Create an account with us via the website.
+              </Text>
+              <Text size='18'>
+                We will manually review your application and get back to you.
+              </Text>
+            </Box>
           }
 
           {/* </Box> */}
@@ -158,9 +165,7 @@ app.frame("/check_user_status", async (c) => {
             action={"/show_notice"}
           >Apply Inline</Button>
         ] :
-        [<Button
-          action={"/"}
-        >Back</Button>],
+        [<Button.Link href="https://app.covariance.network/sign-up">Go to Platform</Button.Link>]
   })
 })
 
