@@ -232,7 +232,6 @@ app.frame("/add_profile_data/:info", async (c) => {
       previousState.info[info === 'end' ? 'about' : info] = inputText
     }
   })
-  console.log("add_profile_data", { info, state, inputText, status, verified });
 
   if (
     !frameData || !state.user
@@ -332,7 +331,6 @@ app.frame("/add_profile_data/:info", async (c) => {
               console.log(`user group for ${state.info.email}`, userGroup[0]);
 
               if (userGroup[0]) {
-                console.log(`user group for ${state.info.email}`, userGroup[0]);
                 message = `Email address already in use.`
                 emailExists = true
                 if (saveToDb) {
@@ -340,6 +338,7 @@ app.frame("/add_profile_data/:info", async (c) => {
                 }
                 // break checkingErrors
               } else {
+                console.log(`user not found for ${state.info.email}`);
                 break checkingErrors
               }
             }
@@ -356,6 +355,11 @@ app.frame("/add_profile_data/:info", async (c) => {
       }
 
     }
+
+    console.log(`out of checkingErrors`, {
+      info, state
+    });
+
 
     if (emailExists) {
       state.info = {}
@@ -406,19 +410,11 @@ app.frame("/add_profile_data/:info", async (c) => {
         break
 
       case 'name': {
-        next = "telegram"
-        previous = "email"
-        placeholder = "Company or organization you identify with?"
-        label = "What's your company name?"
-      }
-        break;
-
-      case 'telegram': {
         next = "end"
-        previous = "name"
-        placeholder = "durov"
+        previous = "email"
         label = "What's your telegram username?"
         sublabel = `We will use this to cross check your farcaster profile on Telegram`
+        placeholder = "durov"
       }
         break;
 
@@ -438,7 +434,10 @@ app.frame("/add_profile_data/:info", async (c) => {
     }
 
 
-    console.log(`info: ${info}`, fid);
+    console.log(`info: ${info}`, {
+      next, previous, placeholder, label, sublabel
+
+    });
 
 
     return c.res({
