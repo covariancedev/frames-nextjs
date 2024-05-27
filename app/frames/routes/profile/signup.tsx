@@ -255,15 +255,14 @@ app.frame("/add_profile_data/:info", async (c) => {
   let userGroupId = ''
   let isError = false
   const saveToDb = !isDev
-  const farcasterUrl = `https://warpcast.com/${state.user.username}`
 
   try {
 
 
 
     if (info === 'end') {
+      console.log(`add_profile_data >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
       if (saveToDb) {
-        console.log(`add_profile_data >> farcasterUrl`, farcasterUrl);
 
 
         // const dbProfile = await airtable.contributors.select({ filterByFormula: `{Farcaster} = '${farcasterUrl}'`, maxRecords: 1 }).all()
@@ -273,7 +272,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         const userGroup = await airtable.user_group.create({
           "Name": state.info.name as string,
           "E-mail": state.info.email as string,
-          "Farcaster": farcasterUrl,
+          "Farcaster": `https://warpcast.com/${state.info.username}`
         })
 
         console.log(`user group created`, userGroup)
@@ -288,8 +287,8 @@ app.frame("/add_profile_data/:info", async (c) => {
             // Role: state.info.role as string,
             // Company: state.info.company as string,
             ToS: true,
-            "Telegram": state.user.username,
-            Farcaster: farcasterUrl,
+            "Telegram": state.info.telegram as string,
+            Farcaster: `https://warpcast.com/${state.info.username}`,
             // expertise
             // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
             "Source": [
@@ -345,6 +344,8 @@ app.frame("/add_profile_data/:info", async (c) => {
               }
             }
           } else {
+
+            console.log(`info: ${info}`);
 
             break checkingErrors
           }
