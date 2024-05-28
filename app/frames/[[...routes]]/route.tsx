@@ -61,14 +61,15 @@ app.hono.get("/allow-list/:id", async c => {
 
 app.frame("/", c => {
   return c.res({
-    image: `${config.baseUrl}/covariance-frame.png`,
-    imageAspectRatio: "1:1",
-    imageOptions: {
-      height: 1071,
-      width: 1071,
-    },
+    image: `${config.baseUrl}/covariance-frame-new.png`,
+    // imageAspectRatio: "1:1",
+    // imageOptions: {
+    //   height: 1071,
+    //   width: 1071,
+    // },
     intents: [
-      <Button action='/profile_signup'>Start</Button>
+      <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
+      <Button action='/profile_signup'>{"Let’s go"}</Button>
     ]
   })
 })

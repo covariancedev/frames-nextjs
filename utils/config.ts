@@ -19,4 +19,5 @@ export default {
     process.env.NODE_ENV === "production"
       ? `https://covariance-api.vercel.app`
       : "http://localhost:3000",
+  aboutUrl: "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
 };

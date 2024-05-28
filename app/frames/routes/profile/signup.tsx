@@ -13,6 +13,9 @@ type State = {
   user?: Awaited<ReturnType<typeof getFarQuestUserDetails>>
 }
 
+const useNewImages = true
+
+
 // type RedisFarcasterUser = Awaited<ReturnType<typeof getFcUser>>
 
 const app = new Frog<{ State: State }>({
@@ -36,6 +39,17 @@ const isDev = process.env.NODE_ENV === 'development'
 
 
 app.frame("/", (c) => {
+
+  if (useNewImages) {
+    return c.res({
+      action: "/check_user_status",
+      image: `${config.baseUrl}/disclaimer.png`,
+      intents: [
+        <Button action="/">Go back</Button>,
+        <Button value="start">Check Eligibilty</Button>
+      ],
+    })
+  }
 
   return c.res({
     action: "/check_user_status",
@@ -66,8 +80,9 @@ app.frame("/", (c) => {
 
       </Box>
     ),
-    intents: [<Button.Link href="https://app.covariance.network">Find out more</Button.Link>
-      , <Button value="start"
+    intents: [
+      <Button.Link href="https://app.covariance.network">Find out more</Button.Link>,
+      <Button value="start"
       >Check eligibilty</Button>
     ],
   });
@@ -106,6 +121,20 @@ app.frame("/check_user_status", async (c) => {
   // const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
   // const name = <Text>{state.user.username}</Text>
+
+  if (useNewImages) {
+    return c.res({
+      image: `${config.baseUrl}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
+      intents: isParticipantOfWork ?
+        [
+          <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
+          <Button
+            action={"/add_profile_data/start"}
+          >Create Profile</Button>
+        ] :
+        [<Button.Link href="https://app.covariance.network/sign-up">Apply via Website</Button.Link>]
+    })
+  }
 
 
   return c.res({
@@ -272,7 +301,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         const userGroup = await airtable.user_group.create({
           "Name": state.info.name as string,
           "E-mail": state.info.email as string,
-          "Farcaster": `https://warpcast.com/${state.user.username}`
+          // "Farcaster": `https://warpcast.com/${state.user.username}`
         })
 
         console.log(`user group created`, userGroup)
@@ -311,6 +340,7 @@ app.frame("/add_profile_data/:info", async (c) => {
     const checkError = !['end', 'start'].includes(info)
     let emailExists = false
     let magicLink: string | undefined = undefined
+    let image = ''
     console.log('checkError', { checkError, inputText })
 
     checkingErrors: {
@@ -318,7 +348,7 @@ app.frame("/add_profile_data/:info", async (c) => {
       if ((checkError)) {
         let message = 'Invalid input: '
         if (!inputText) {
-          message += 'Text cannot be empty'
+          message += `${info === 'name' ? 'Name' : info === 'email' ? 'Email' : 'Telegram username'} is required`
         } else {
 
 
@@ -406,6 +436,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         next = 'name'
         previous = 'start'
         placeholder = "John Doe"
+        image = 'name'
         label = "What's your full name?"
       }
         break
@@ -414,6 +445,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         next = "end"
         previous = "email"
         label = "What's your telegram username?"
+        image = 'telegram'
         sublabel = `We will use this to cross check your farcaster profile on Telegram`
         placeholder = "durov"
       }
@@ -422,6 +454,7 @@ app.frame("/add_profile_data/:info", async (c) => {
       case 'end': {
         label = "Thank you for providing your information."
         sublabel = `Have a chat with our telegram bot for the group link and login information.`
+        image = 'finished'
       }
         break;
 
@@ -429,16 +462,40 @@ app.frame("/add_profile_data/:info", async (c) => {
         next = 'email'
         placeholder = "email@example.com"
         label = "What's your email address?"
+        image = 'email'
         sublabel = "This will be used to create your profile on the app so you can login."
       }
         break
     }
 
-
+    image = info === 'end' ? image : `${image}-${isError ? 'error' : 'input'}`
     console.log(`info: ${info}`, {
-      next, previous, placeholder, label, sublabel
+      next, previous, placeholder, label, sublabel, image
 
     });
+
+
+    if (useNewImages) {
+      return c.res({
+        image: `${config.baseUrl}/${image}.png`,
+        intents: info !== 'end' ? [
+
+          <TextInput placeholder={placeholder} />,
+          // ...[previous !== '' ? 
+          <Button action={`/add_profile_data/${previous}`}>Back</Button>,
+          //  :
+          <Button.Reset>♻️Reset</Button.Reset>,
+          // ],
+          <Button
+            action={`/add_profile_data/${next}`}
+          >Next </Button>,
+
+        ] :
+          [
+            <Button.Link href={`https://t.me/CovarianceBot?start=magiclink_${userGroupId}`}>Launch 🤖</Button.Link>
+          ]
+      })
+    }
 
 
     return c.res({
