@@ -17,8 +17,13 @@ export async function addFarcasterInfo(
     displayName,
     pfp,
   }: Awaited<ReturnType<typeof getFcUser>>,
-  contributorId: string
+  contributorId: string,
+  skip = false
 ) {
+  if (skip) {
+    return;
+  }
+
   try {
     const add = Object.fromEntries(
       addressTypes.map((k) => {

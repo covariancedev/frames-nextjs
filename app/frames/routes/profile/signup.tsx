@@ -31,11 +31,10 @@ const app = new Frog<{ State: State }>({
   }
 });
 
-// const hub = 'covariance'
+const hub = 'covariance'
 
 
 const isDev = process.env.NODE_ENV === 'development'
-
 
 
 app.frame("/", (c) => {
@@ -291,6 +290,14 @@ app.frame("/add_profile_data/:info", async (c) => {
     if (info === 'end') {
       console.log(`add_profile_data >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
       console.log(`add_profile_data >> state.info: `, state.info);
+      const email = state.info.email as string
+      const farcasterUrl = `https://warpcast.com/${state.user.username}`
+      const existingContributor = await airtable.contributors.select({ filterByFormula: `OR({Email} = '${email}', {Farcaster} = '${farcasterUrl}')`, maxRecords: 1 }).all()
+      const existingUserGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 }).all()
+      const user = existingUserGroup[0]
+      const contributor = existingContributor[0]
+      console.log(`existingContributor`, contributor?.fields, { Hubs: contributor?.fields?.Hubs, "User Groups": contributor?.fields?.["User Groups"] });
+      console.log(`existingUserGroup`, user);
       if (saveToDb) {
 
 
@@ -298,41 +305,51 @@ app.frame("/add_profile_data/:info", async (c) => {
 
         const fcUser = await getFcUser(state.user.username)
 
-        const userGroup = await airtable.user_group.create({
-          "Name": state.info.name as string,
-          "E-mail": state.info.email as string,
-          // "Farcaster": `https://warpcast.com/${state.user.username}`
-        })
+        if (!user) {
+          console.log(`Adding new user group for ${state.info.email}`)
+          const userGroup = user ? user : await airtable.user_group.create({
+            "Name": state.info.name as string,
+            "E-mail": state.info.email as string,
+            // "Farcaster": `https://warpcast.com/${state.user.username}`
+          })
 
-        console.log(`user group created`, userGroup)
+          userGroupId = userGroup.id
 
-        userGroupId = userGroup.id
+        }
 
-        const contributor =
-          await airtable.contributors.create({
-            Name: state.info.name as string,
-            Email: state.info.email as string,
-            // Notes: (inputText === 'none' ? '' : inputText) + `\n\nAdded through farcaster frames.`,
-            // Role: state.info.role as string,
-            // Company: state.info.company as string,
-            ToS: true,
-            "Telegram": state.info.telegram as string,
-            Farcaster: `https://warpcast.com/${state.user.username}`,
-            // expertise
-            // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
-            "Source": [
-              "Farcaster"
-            ],
-            "Referred by": "Lior Goldenberg",
-            // @ts-ignore
-            "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
-            "Invite Code": config.inviteCode,
-          },
-            { typecast: true }
-          )
 
-        // @ts-ignore
-        await addFarcasterInfo(fcUser, contributor.id)
+        const foundInHub = (contributor.fields.Hubs as string[]).find(h => h.toLowerCase() === hub)
+        let profileId = contributor?.id
+        let isFarcasterUser = contributor.fields.Farcaster === farcasterUrl
+        if (!foundInHub) {
+          const profile =
+            await airtable.contributors.create({
+              Name: state.info.name as string,
+              Email: state.info.email as string,
+              Notes: fcUser.bio,
+              // Role: state.info.role as string,
+              // Company: state.info.company as string,
+              ToS: true,
+              "Telegram": state.info.telegram as string,
+              Farcaster: `https://warpcast.com/${state.user.username}`,
+              // expertise
+              // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
+              "Source": [
+                "Farcaster"
+              ],
+              Hubs: [config.hubs.find(h => h.code === hub)?.id as string],
+              "Referred by": "Lior Goldenberg",
+              // @ts-ignore
+              "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
+              "Invite Code": config.inviteCode,
+            },
+              { typecast: true }
+            )
+          profileId = (profile as unknown as { id: string }).id
+
+        }
+
+        await addFarcasterInfo(fcUser, profileId, isFarcasterUser)
         // await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
       }
     }

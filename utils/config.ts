@@ -20,4 +20,11 @@ export default {
       ? `https://covariance-api.vercel.app`
       : "http://localhost:3000",
   aboutUrl: "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
+  hubs: [
+    {
+      name: "Covariance",
+      id: "recZmdQC0qwTh1PWE",
+      code: "covariance",
+    },
+  ],
 };
