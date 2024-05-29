@@ -501,7 +501,7 @@ app.frame("/add_profile_data/:info", async (c) => {
           // ...[previous !== '' ? 
           <Button action={`/add_profile_data/${previous}`}>Back</Button>,
           //  :
-          <Button.Reset>♻️Reset</Button.Reset>,
+          // <Button.Reset>♻️Reset</Button.Reset>,
           // ],
           <Button
             action={`/add_profile_data/${next}`}
@@ -549,7 +549,7 @@ app.frame("/add_profile_data/:info", async (c) => {
         // ...[previous !== '' ? 
         <Button action={`/add_profile_data/${previous}`}>Back</Button>,
         //  :
-        <Button.Reset>♻️Reset</Button.Reset>,
+        // <Button.Reset>♻️Reset</Button.Reset>,
         // ],
         <Button
           action={`/add_profile_data/${next}`}
