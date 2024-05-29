@@ -322,6 +322,9 @@ app.frame("/add_profile_data/:info", async (c) => {
         let profileId = contributor?.id
         let isFarcasterUser = contributor.fields.Farcaster === farcasterUrl
         if (!foundInHub) {
+          let telegramUsername = state.info.telegram as string
+          // remove "@" from username
+          telegramUsername = telegramUsername.replace('@', '').trim().toLowerCase()
           const profile =
             await airtable.contributors.create({
               Name: state.info.name as string,
@@ -330,7 +333,7 @@ app.frame("/add_profile_data/:info", async (c) => {
               // Role: state.info.role as string,
               // Company: state.info.company as string,
               ToS: true,
-              "Telegram": state.info.telegram as string,
+              "Telegram": telegramUsername,
               Farcaster: `https://warpcast.com/${state.user.username}`,
               // expertise
               // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
