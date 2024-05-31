@@ -42,7 +42,7 @@ app.frame("/", (c) => {
   if (useNewImages) {
     return c.res({
       action: "/check_user_status",
-      image: `${config.baseUrl}/disclaimer.png`,
+      image: `${config.baseUrl}/frame-slides/${hub}/disclaimer.png`,
       intents: [
         <Button action="/">Go back</Button>,
         <Button value="start">Check Eligibilty</Button>
@@ -87,6 +87,29 @@ app.frame("/", (c) => {
   });
 });
 
+// slide for lil info about the hub
+app.frame("/about/:hub", async c => {
+  const { hub } = c.req.param()
+  const hubs = config.hubs
+
+  if (!hubs.find(h => h.code === hub)) {
+    return c.res({
+      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the hub: ${hub} cannot be found.`} />,
+      intents: [
+        <Button action="/">Back</Button>
+      ]
+    })
+  }
+
+  return c.res({
+    image: `${config.baseUrl}/frame-slides/${hub}/about.png`,
+    intents: [
+      <Button action="/">Back</Button>,
+      <Button.Link href={config.aboutUrl}>Read more</Button.Link>,
+    ]
+  })
+})
+
 app.frame("/check_user_status", async (c) => {
   const state = await c.deriveState(async (previousState) => {
     if (c.frameData && !previousState.user) {
@@ -123,7 +146,7 @@ app.frame("/check_user_status", async (c) => {
 
   if (useNewImages) {
     return c.res({
-      image: `${config.baseUrl}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
+      image: `${config.baseUrl}/frame-slides/${hub}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
       intents: isParticipantOfWork ?
         [
           <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
@@ -497,7 +520,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
     if (useNewImages) {
       return c.res({
-        image: `${config.baseUrl}/${image}.png`,
+        image: `/frame-slides/${hub}/${image}.png`,
         intents: info !== 'end' ? [
 
           <TextInput placeholder={placeholder} />,
