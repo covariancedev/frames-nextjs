@@ -68,7 +68,7 @@ app.frame("/", c => {
     //   width: 1071,
     // },
     intents: [
-      <Button action='/about/covariance'>What is Covariance?</Button>,
+      <Button action='/profile_signup/about/covariance'>What is Covariance?</Button>,
       <Button action='/profile_signup'>{"Apply"}</Button>
     ]
   })

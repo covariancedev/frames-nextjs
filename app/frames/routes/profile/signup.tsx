@@ -39,78 +39,44 @@ const isDev = process.env.NODE_ENV === 'development'
 
 app.frame("/", (c) => {
 
-  if (useNewImages) {
-    return c.res({
-      action: "/check_user_status",
-      image: `${config.baseUrl}/frame-slides/${hub}/disclaimer.png`,
-      intents: [
-        <Button action="/">Go back</Button>,
-        <Button value="start">Check Eligibilty</Button>
-      ],
-    })
-  }
-
   return c.res({
     action: "/check_user_status",
-    image: (
-      <Box
-        grow
-        backgroundColor="secondary"
-        color="primary"
-        padding="32"
-        alignVertical="center"
-      >
-        <VStack gap="20">
-          <Heading align="center" size="48">
-            Join Covariance
-          </Heading>
-
-          <Box alignVertical='center'>
-            <Text align="center" size="18">
-              Before you are able to join, we'll first need to check your eligibility
-            </Text>
-            {/* <Spacer /> */}
-            <Text wrap='balance'>
-              You can also find out more about us by clicking the first button below 😉
-            </Text>
-
-          </Box>
-        </VStack>
-
-      </Box>
-    ),
+    image: `${config.baseUrl}/frame-slides/${hub}/disclaimer.png`,
     intents: [
-      <Button.Link href="https://app.covariance.network">Find out more</Button.Link>,
-      <Button value="start"
-      >Check eligibilty</Button>
+      <Button.Reset>Go back</Button.Reset>,
+      <Button value="start">Check Eligibilty</Button>
     ],
-  });
+  })
+
 });
 
 // slide for lil info about the hub
 app.frame("/about/:hub", async c => {
-  const { hub } = c.req.param()
+  const params = c.req.param()
   const hubs = config.hubs
+  const hub = hubs.find(h => h.code === params.hub)
 
-  if (!hubs.find(h => h.code === hub)) {
+
+  if (!hub) {
     return c.res({
-      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the hub: ${hub} cannot be found.`} />,
+      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the ${params.hub} hub cannot be found.`} />,
       intents: [
-        <Button action="/">Back</Button>
+        <Button.Reset>Back</Button.Reset>,
       ]
     })
   }
 
   return c.res({
-    image: `${config.baseUrl}/frame-slides/${hub}/about.png`,
+    image: `${config.baseUrl}/frame-slides/${hub.code}/about.png`,
     intents: [
-      <Button action="/">Back</Button>,
+      <Button.Reset>Back</Button.Reset>,
       <Button.Link href={config.aboutUrl}>Read more</Button.Link>,
     ]
   })
 })
 
 app.frame("/check_user_status", async (c) => {
+  console.log("check_user_status top",);
   const state = await c.deriveState(async (previousState) => {
     if (c.frameData && !previousState.user) {
       previousState.user = await getFarQuestUserDetails(c.frameData.fid)
@@ -144,79 +110,16 @@ app.frame("/check_user_status", async (c) => {
   const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
   // const name = <Text>{state.user.username}</Text>
 
-  if (useNewImages) {
-    return c.res({
-      image: `${config.baseUrl}/frame-slides/${hub}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
-      intents: isParticipantOfWork ?
-        [
-          <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
-          <Button
-            action={"/add_profile_data/start"}
-          >Create Profile</Button>
-        ] :
-        [<Button.Link href="https://app.covariance.network/sign-up">Apply via Website</Button.Link>]
-    })
-  }
-
-
   return c.res({
-    image: (
-      <Box
-        backgroundColor="secondary"
-        color="primary"
-        padding="32"
-        grow
-        alignVertical="center"
-      >
-        <VStack gap='4'>
-          <Heading align="center" size="48">Join Covariance</Heading>
-
-
-          {/* <Text size='20' color={frameUser ? "red" : undefined}> */}
-          <Text size='20' color={undefined}>
-            {
-              // frameUser ? `Sorry ${state.user.username}, you're already a Covariance Contributor` :
-              isParticipantOfWork ?
-
-                `🎉 Congratulations, ${state.user.username}! 🎉 You're on the allow list!`
-                :
-                `Sorry, you are not on the allow list.`
-            }
-          </Text>
-          {/* <Spacer /> */}
-          {isParticipantOfWork ?
-            <Box>
-              <Text size='20'>
-                To join, you need to create your contributor profile.
-              </Text>
-              <Text size='18'>
-                Either do in Frame, or on the app.
-              </Text>
-            </Box>
-            : <Box>
-              <Text size='20'>
-                Create an account with us via the website.
-              </Text>
-              <Text size='18'>
-                We will manually review your application and get back to you.
-              </Text>
-            </Box>
-          }
-
-          {/* </Box> */}
-        </VStack>
-      </Box>
-    ),
-    intents:
-      // !frameUser &&
-      isParticipantOfWork ?
-        [
-          <Button.Link href="https://app.covariance.network/registration">Create Profile Online</Button.Link>,
-          <Button
-            action={"/show_notice"}
-          >Apply Inline</Button>
-        ] :
-        [<Button.Link href="https://app.covariance.network/sign-up">Go to Platform</Button.Link>]
+    image: `${config.baseUrl}/frame-slides/${hub}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
+    intents: isParticipantOfWork ?
+      [
+        <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
+        <Button
+          action={"/add_profile_data/start"}
+        >Create Profile</Button>
+      ] :
+      [<Button.Link href="https://app.covariance.network/sign-up">Apply via Website</Button.Link>]
   })
 })
 
