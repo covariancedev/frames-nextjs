@@ -10,6 +10,9 @@ import { ErrorImage } from "../../utils/errors";
 
 type State = {
   info: Record<string, unknown>
+  whitelisted: {
+    [key: string]: boolean
+  }
   user?: Awaited<ReturnType<typeof getFarQuestUserDetails>>
 }
 
@@ -23,7 +26,10 @@ const app = new Frog<{ State: State }>({
   ui: { vars },
   initialState: {
     info: {},
-    user: undefined
+    user: undefined,
+    whitelisted: {
+      covariance: false
+    }
   },
   verify: process.env.NODE_ENV === 'production',
   headers: {
@@ -78,8 +84,9 @@ app.frame("/about/:hub", async c => {
 app.frame("/check_user_status", async (c) => {
   console.log("check_user_status top",);
   const state = await c.deriveState(async (previousState) => {
-    if (c.frameData && !previousState.user) {
-      previousState.user = await getFarQuestUserDetails(c.frameData.fid)
+    if (c.frameData) {
+      previousState.user = previousState.user ??
+        await getFarQuestUserDetails(c.frameData.fid)
     }
     previousState.info = {}
 
@@ -107,14 +114,20 @@ app.frame("/check_user_status", async (c) => {
   const fid = frameData.fid
   // const frameUser = await redis.hget<RedisFarcasterUser>(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, 'fid')
   // const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
-  const isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
+  let isParticipantOfWork = state.whitelisted[hub]
+  if (!isParticipantOfWork) {
+    console.log(`User ${fid} is not a participant of the work channel`);
+    isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
+    state.whitelisted[hub] = isParticipantOfWork
+  }
+
   // const name = <Text>{state.user.username}</Text>
 
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
     intents: isParticipantOfWork ?
       [
-        <Button.Link href={config.aboutUrl}>What is Covariance?</Button.Link>,
+        <Button action="/">{"🔙"}</Button>,
         <Button
           action={"/add_profile_data/start"}
         >Create Profile</Button>
