@@ -61,7 +61,7 @@ app.hono.get("/allow-list/:id", async c => {
 
 app.frame("/", c => {
   return c.res({
-    image: `${config.baseUrl}/frame-slides/covariance-/intro.png`,
+    image: `${config.baseUrl}/frame-slides/covariance/intro.png`,
     // imageAspectRatio: "1:1",
     // imageOptions: {
     //   height: 1071,
