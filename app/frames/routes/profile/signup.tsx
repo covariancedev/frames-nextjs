@@ -75,8 +75,8 @@ app.frame("/about/:hub", async c => {
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub.code}/about.png`,
     intents: [
-      <Button.Reset>Back</Button.Reset>,
       <Button.Link href={config.aboutUrl}>Read more</Button.Link>,
+      <Button action="/check_user_status" value="start">Apply</Button>,
     ]
   })
 })
