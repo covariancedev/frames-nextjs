@@ -4,6 +4,8 @@ type Hub = {
   name: "Covariance" | "CoOwnCaster";
   id: string;
   code: "covariance" | "coowncaster";
+  aboutUrl: string;
+  website: string;
 };
 
 export default {
@@ -31,11 +33,17 @@ export default {
       name: "Covariance",
       id: "recZmdQC0qwTh1PWE",
       code: "covariance",
+      aboutUrl:
+        "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
+      website: "https://app.covariance.network",
     },
     {
       name: "CoOwnCaster",
       id: "rec9xw8Q3EYpQwNx9",
       code: "coowncaster",
+      aboutUrl:
+        "https://paragraph.xyz/@0xcovariance.eth/preview/wua2eCFM7JnRSNHcbgIO",
+      website: "https://app.covariance.network/coowncaster",
     },
   ] as Hub[],
 };
