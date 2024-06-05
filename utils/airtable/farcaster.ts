@@ -91,7 +91,8 @@ export async function syncContributorsWithFarcasterDataOnAirtable() {
       // console.log(`Records info for recid:${rec.id}`, rec.fields);
 
       // remove trailing slash and trim
-      url = url.replace(/\/$/, "").trim();
+      const oldUrl = url.replace(/\/$/, "").trim();
+      url = oldUrl;
       const split = url.split("/");
 
       if (!url.startsWith("https://warpcast.com")) {
@@ -104,6 +105,15 @@ export async function syncContributorsWithFarcasterDataOnAirtable() {
 
       if (!username) {
         continue;
+      }
+
+      const newUrl = `https://warpcast.com/${username}`;
+
+      if (url !== newUrl) {
+        console.log(
+          `syncContributorsWithFarcasterDataOnAirtable >> updating url for ${username} from ${url} to ${newUrl}`
+        );
+        await updateFarcasterUrl(rec.id, newUrl);
       }
 
       url = new URL(url).toString();
@@ -129,6 +139,36 @@ export async function syncContributorsWithFarcasterDataOnAirtable() {
 
       if (!fcData) {
         addFarcasterInfo(fc, rec.id);
+      } else {
+        console.log(
+          `syncContributorsWithFarcasterDataOnAirtable >> user(${rec.fields["Name"]}) already exists`
+        );
+
+        if (fcData.fields.url !== url) {
+          console.log(
+            `syncContributorsWithFarcasterDataOnAirtable >> updating url for ${username} from ${fcData.fields.url} to ${url}`
+          );
+          const addresses = Object.fromEntries(
+            fc.addressTypes.map((k) => {
+              const key = k as keyof typeof fcData.fields;
+              return [key, fcData.fields[key]];
+            })
+          );
+          const updated = await airtable.farcaster.update(fcData.id, {
+            ...addresses,
+            url,
+            fid: fc.fid,
+            fnames: fc.fnames.map((f) => "- " + f).join("\n"),
+            displayName: fc.displayName,
+            pfp: [{ url: fc.pfp }],
+            bio: fc.bio,
+            addressTypes: fc.addressTypes,
+          });
+          console.log(
+            `syncContributorsWithFarcasterDataOnAirtable >> updated for ${username}`,
+            updated.id
+          );
+        }
       }
 
       urls.push({
