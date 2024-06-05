@@ -37,24 +37,10 @@ const app = new Frog<{ State: State }>({
   }
 });
 
-const hub = 'covariance'
 
 
 const isDev = process.env.NODE_ENV === 'development'
 
-
-app.frame("/", (c) => {
-
-  return c.res({
-    action: "/check_user_status",
-    image: `${config.baseUrl}/frame-slides/${hub}/disclaimer.png`,
-    intents: [
-      <Button.Reset>Go back</Button.Reset>,
-      <Button value="start">Check Eligibilty</Button>
-    ],
-  })
-
-});
 
 app.frame("/apply/:hub", async c => {
   const params = c.req.param()
@@ -71,7 +57,7 @@ app.frame("/apply/:hub", async c => {
   }
 
   return c.res({
-    image: `${config.baseUrl}/frame-slides/${hub.code}/start.png`,
+    image: `${config.baseUrl}/frame-slides/${hub.code}/disclaimer.png`,
     intents: [
       <Button.Reset>Go back</Button.Reset>,
       <Button action={`/check_user_status/${hub.code}`} value="start">Check Eligibilty</Button>,
@@ -100,7 +86,7 @@ app.frame("/about/:hub", async c => {
     image: `${config.baseUrl}/frame-slides/${hub.code}/about.png`,
     intents: [
       <Button.Link href={hub.aboutUrl}>Read more</Button.Link>,
-      <Button action={`/check_user_status/${hub.code}`} value="start">Apply</Button>,
+      <Button action={`/check_user_status/${hub.code}`} value="start">Check Eligibilty</Button>,
     ]
   })
 })
