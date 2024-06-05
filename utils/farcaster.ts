@@ -75,12 +75,18 @@ export async function isFarcasterUserParticipantOfWorkChannelFromAirstack(
     // limit: 100,
   };
 
+  const tokensHolding: NonNullable<
+    Parameters<
+      NonNullable<CreateAllowListInput["isAllowedFunction"]>
+    >[number]["isTokensHold"]
+  > = [];
+
   const { data, error }: FarcasterChannelParticipantsOutput =
     await getFarcasterChannelParticipants(input);
 
   if (error) {
     console.error("isFarcasterUserParticipantOfWorkChannelFromAirstack", error);
-    return false;
+    return { isAllowed: false, tokensHolding };
   } // throw new Error(error);
 
   const found = data?.find(
@@ -93,32 +99,45 @@ export async function isFarcasterUserParticipantOfWorkChannelFromAirstack(
     "isFarcasterUserParticipantOfWorkChannelFromAirstack",
     found?.profileName
   );
-  return !!found;
+  const isAllowed = Boolean(found);
+  return { isAllowed, tokensHolding };
 }
 
-export async function isFarcasterUserParticipantOfWorkChannel(
-  fid: number,
-  channel = "farcaster",
-  from: "warpcast" | "airstack" = "airstack"
-) {
+export async function checkAllowList(hubName: string, fid: number) {
+  const hub = config.hubs.find((h) => h.code === hubName);
+
+  if (!hub) {
+    throw new Error(`Hub ${hubName} not found`);
+  }
+
+  switch (hub.code) {
+    case "covariance":
+      return getCovarianceUserAllowList(fid);
+    case "coowncaster":
+      return getCoOwnCasterUserAllowedList(fid);
+    default:
+      throw new Error(`Hub ${hubName} not found`);
+  }
+}
+
+export async function getCovarianceUserAllowList(fid: number) {
+  const channel = "work";
+  const from = "airstack";
   console.log("isFarcasterUserParticipantOfWorkChannel", {
     fid,
     channel,
     from,
   });
 
-  const found =
-    from === "warpcast"
-      ? await isFarcasterUserParticipantOfWorkChannelFromWarpcastAPI(
-          fid,
-          channel
-        )
-      : await isFarcasterUserParticipantOfWorkChannelFromAirstack(fid, channel);
+  const found = await isFarcasterUserParticipantOfWorkChannelFromAirstack(
+    fid,
+    channel
+  );
   console.log(`is ${found} a follower of ${channel} from ${from}?`, found);
   return found;
 }
 
-export async function getFarcasterUserAllowedList(fid: number) {
+export async function getCoOwnCasterUserAllowedList(fid: number) {
   const allowListCriteria: CreateAllowListInput["allowListCriteria"] = {
     // eventIds: [166577],
     // numberOfFollowersOnFarcaster: 100,
@@ -202,13 +221,12 @@ export async function getFarcasterUserAllowedList(fid: number) {
     },
   };
 
-  const { isAllowed, error }: CreateAllowListOutput = await createAllowList(
-    input
-  );
+  const result: CreateAllowListOutput = await createAllowList(input);
+  const isAllowed = result.isAllowed ? true : false;
 
-  if (error) {
-    console.error("getFarcasterUserAllowedList", error);
-    return false;
+  if (result.error) {
+    console.error("getFarcasterUserAllowedList", result.error);
+    return { isAllowed: false, tokensHolding: [] };
   } // throw new Error(error);
 
   console.log("getFarcasterUserAllowedList", isAllowed);

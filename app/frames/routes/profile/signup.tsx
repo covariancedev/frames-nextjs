@@ -1,7 +1,7 @@
 /** @jsxImportSource @airstack/frog/jsx */
 import { Box, Heading, Text, VStack, vars } from "@/utils/ui";
 import { Button, Frog, TextInput } from "@airstack/frog";
-import { getFarQuestUserDetails, getFcUser, isFarcasterUserParticipantOfWorkChannel } from "@/utils/farcaster";
+import { checkAllowList, getFarQuestUserDetails, getFcUser } from "@/utils/farcaster";
 // import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
 import { addFarcasterInfo } from "@/utils/airtable/farcaster";
@@ -56,6 +56,30 @@ app.frame("/", (c) => {
 
 });
 
+app.frame("/apply/:hub", async c => {
+  const params = c.req.param()
+  const hubs = config.hubs
+  const hub = hubs.find(h => h.code === params.hub)
+
+  if (!hub) {
+    return c.res({
+      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the ${params.hub} hub cannot be found.`} />,
+      intents: [
+        <Button.Reset>Back</Button.Reset>,
+      ]
+    })
+  }
+
+  return c.res({
+    image: `${config.baseUrl}/frame-slides/${hub.code}/start.png`,
+    intents: [
+      <Button.Reset>Go back</Button.Reset>,
+      <Button action={`/check_user_status/${hub.code}`} value="start">Check Eligibilty</Button>,
+    ]
+  })
+}
+)
+
 // slide for lil info about the hub
 app.frame("/about/:hub", async c => {
   const params = c.req.param()
@@ -81,14 +105,28 @@ app.frame("/about/:hub", async c => {
   })
 })
 
-app.frame("/check_user_status", async (c) => {
-  console.log("check_user_status top",);
+app.frame("/check_user_status/:hub", async (c) => {
+  const hub = config.hubs.find(h => h.code === c.req.param().hub)
+
+  if (!hub) {
+    return c.res({
+      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the ${hub} hub cannot be found.`} />,
+      intents: [
+        <Button.Reset>Back</Button.Reset>,
+      ]
+    })
+  }
+
+  console.log("check_user_status top", { hub });
   const state = await c.deriveState(async (previousState) => {
     if (c.frameData) {
       previousState.user = previousState.user ??
         await getFarQuestUserDetails(c.frameData.fid)
     }
-    previousState.info = {}
+    previousState.info = {
+      ...previousState.info,
+      [hub.code]: previousState.info[hub.code] ?? {}
+    }
 
   })
 
@@ -114,91 +152,50 @@ app.frame("/check_user_status", async (c) => {
   const fid = frameData.fid
   // const frameUser = await redis.hget<RedisFarcasterUser>(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, 'fid')
   // const isParticipantOfWork = !frameUser ? await isFarcasterUserParticipantOfWorkChannel(fid, "work") : false
-  let isParticipantOfWork = state.whitelisted[hub]
-  if (!isParticipantOfWork) {
+  let isAllowed = state.whitelisted[hub.code]
+  if (!isAllowed) {
     console.log(`User ${fid} is not a participant of the work channel`);
-    isParticipantOfWork = await isFarcasterUserParticipantOfWorkChannel(fid, "work")
-    state.whitelisted[hub] = isParticipantOfWork
+    const allowlist = await checkAllowList(hub.code, fid)
+    state.whitelisted[hub.code] = allowlist.isAllowed
   }
 
   // const name = <Text>{state.user.username}</Text>
 
   return c.res({
-    image: `${config.baseUrl}/frame-slides/${hub}/${isParticipantOfWork ? "" : 'not-'}eligible.png`,
-    intents: isParticipantOfWork ?
+    image: `${config.baseUrl}/frame-slides/${hub.code}/${isAllowed ? "" : 'not-'}eligible.png`,
+    intents: isAllowed ?
       [
-        <Button action="/">{"🔙"}</Button>,
-        <Button
-          action={"/add_profile_data/start"}
-        >Create Profile</Button>
+        <Button action={`/apply/${hub.code}`}>{"🔙"}</Button>,
+        <Button action={`/add_profile_data/${hub.code}/start`}>Create Profile</Button>
       ] :
       [<Button.Link href="https://app.covariance.network/sign-up">Apply via Website</Button.Link>]
   })
 })
 
-app.frame("/show_notice", (c) => {
-  const { inputText, status, frameData, verified, deriveState } = c
-  const state = deriveState()
-  console.log("show_notice", { inputText, status, verified, state });
 
-  if (
-    !frameData || !state.user
-  ) {
+app.frame("/add_profile_data/:hub/:info", async (c) => {
+  const hub = config.hubs.find(h => h.code === c.req.param().hub)
+
+  if (!hub) {
     return c.res({
-      image: (
-        <ErrorImage
-          title={`Oops, something went wrong`}
-          subtitle="Send a DC to @lior or ping him in a cast for support"
-        />
-      ),
+      image: <ErrorImage title="Hub not found" subtitle={`Sorry, the ${hub} hub cannot be found.`} />,
+      intents: [
+        <Button.Reset>Back</Button.Reset>,
+      ]
     })
   }
-
-  return c.res({
-    image: (
-      <Box
-        backgroundColor="secondary"
-        color="primary"
-        padding="32"
-        grow
-        alignVertical="center"
-      >
-        <VStack gap='4'>
-          <Heading align="center" size="48">Disclaimer</Heading>
-
-          <Box>
-            <Text size='20'>
-              The following steps will setup your contributor profile, which will be used to direct opportunities that are most relevant to you
-            </Text>
-            {/* <ErrorImage
-            title={`Oops, something went wrong`}
-            subtitle="Send a DC to @lior or ping him in a cast for support"
-          /> */}
-          </Box>
-        </VStack>
-      </Box>
-    ),
-    intents: [
-      <Button action={"/check_user_status"}>Back</Button>,
-      <Button
-        action={"/add_profile_data/start"}
-      >Continue</Button>,
-      // <Button.Reset>♻️Reset</Button.Reset>,
-
-    ]
-  })
-})
-
-
-app.frame("/add_profile_data/:info", async (c) => {
 
   let { info } = c.req.param()
-  const { inputText, status, frameData, deriveState, verified } = c
+  const { inputText, frameData, deriveState } = c
   const state = deriveState(previousState => {
     if (inputText && !['start'].includes(info)) {
-      previousState.info[info === 'end' ? 'telegram' : info] = inputText
+      const hubState = previousState.info[hub.code] as Record<string, unknown>
+      hubState[info === 'end' ? 'telegram' : info] = inputText
+      previousState.info[hub.code] = hubState
     }
+
   })
+  const hubState = state.info[hub.code] as Record<string, unknown>
 
   if (
     !frameData || !state.user
@@ -212,7 +209,6 @@ app.frame("/add_profile_data/:info", async (c) => {
       ),
     })
   }
-  const fid = frameData.fid
   let placeholder = ''
   let label = ''
   let sublabel = ''
@@ -227,9 +223,9 @@ app.frame("/add_profile_data/:info", async (c) => {
 
 
     if (info === 'end') {
-      console.log(`add_profile_data >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
-      console.log(`add_profile_data >> state.info: `, state.info);
-      const email = state.info.email as string
+      console.log(`add_profile_data/${hub.code} >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
+      console.log(`add_profile_data/${hub.code} >> hubState: `, hubState);
+      const email = hubState.email as string
       const farcasterUrl = `https://warpcast.com/${state.user.username}`
       const existingContributor = await airtable.contributors.select({ filterByFormula: `OR({Email} = '${email}', {Farcaster} = '${farcasterUrl}')`, maxRecords: 1 }).all()
       const existingUserGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 }).all()
@@ -245,10 +241,10 @@ app.frame("/add_profile_data/:info", async (c) => {
         const fcUser = await getFcUser(state.user.username)
 
         if (!user) {
-          console.log(`Adding new user group for ${state.info.email}`)
+          console.log(`Adding new user group for ${hubState.email}`)
           const userGroup = user ? user : await airtable.user_group.create({
-            "Name": state.info.name as string,
-            "E-mail": state.info.email as string,
+            "Name": hubState.name as string,
+            "E-mail": hubState.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
           })
 
@@ -257,29 +253,29 @@ app.frame("/add_profile_data/:info", async (c) => {
         }
 
 
-        const foundInHub = (contributor.fields.Hubs as string[]).find(h => h.toLowerCase() === hub)
+        const foundInHub = (contributor.fields.Hubs as string[]).find(h => h.toLowerCase() === hub.id)
         let profileId = contributor?.id
         let isFarcasterUser = contributor.fields.Farcaster === farcasterUrl
         if (!foundInHub) {
-          let telegramUsername = state.info.telegram as string
+          let telegramUsername = hubState.telegram as string
           // remove "@" from username
           telegramUsername = telegramUsername.replace('@', '').trim().toLowerCase()
           const profile =
             await airtable.contributors.create({
-              Name: state.info.name as string,
-              Email: state.info.email as string,
+              Name: hubState.name as string,
+              Email: hubState.email as string,
               Notes: fcUser.bio,
-              // Role: state.info.role as string,
-              // Company: state.info.company as string,
+              // Role: hubState.role as string,
+              // Company: hubState.company as string,
               ToS: true,
               "Telegram": telegramUsername,
               Farcaster: `https://warpcast.com/${state.user.username}`,
               // expertise
-              // fldnEG45PcwNEDObI: (state.info.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
+              // fldnEG45PcwNEDObI: (hubState.expertise as string).split(',').map((e: string) => e.toLowerCase().trim()),
               "Source": [
                 "Farcaster"
               ],
-              Hubs: [config.hubs.find(h => h.code === hub)?.id as string],
+              Hubs: [hub.id],
               "Referred by": "Lior Goldenberg",
               // @ts-ignore
               "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
@@ -312,13 +308,13 @@ app.frame("/add_profile_data/:info", async (c) => {
 
 
           if (info === 'email') {
-            const email = state.info.email as string
+            const email = hubState.email as string
 
             if (!email.includes('@')) {
               message = `Invalid email address captured`
             } else {
-              const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${state.info.email}'`, maxRecords: 1 }).all()
-              console.log(`user group for ${state.info.email}`, userGroup[0]);
+              const userGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${hubState.email}'`, maxRecords: 1 }).all()
+              console.log(`user group for ${hubState.email}`, userGroup[0]);
 
               if (userGroup[0]) {
                 message = `Email address already in use.`
@@ -328,7 +324,7 @@ app.frame("/add_profile_data/:info", async (c) => {
                 }
                 // break checkingErrors
               } else {
-                console.log(`user not found for ${state.info.email}`);
+                console.log(`user not found for ${hubState.email}`);
                 break checkingErrors
               }
             }
@@ -352,7 +348,7 @@ app.frame("/add_profile_data/:info", async (c) => {
 
 
     if (emailExists) {
-      state.info = {}
+      state.info[hub.code] = {}
       return c.res({
         image: (
           <Box
@@ -434,78 +430,30 @@ app.frame("/add_profile_data/:info", async (c) => {
     });
 
 
-    if (useNewImages) {
-      return c.res({
-        image: `/frame-slides/${hub}/${image}.png`,
-        intents: info !== 'end' ? [
-
-          <TextInput placeholder={placeholder} />,
-          // ...[previous !== '' ? 
-          <Button action={`/add_profile_data/${previous}`}>Back</Button>,
-          //  :
-          // <Button.Reset>♻️Reset</Button.Reset>,
-          // ],
-          <Button
-            action={`/add_profile_data/${next}`}
-          >Next </Button>,
-
-        ] :
-          [
-            <Button.Link href={`https://t.me/CovarianceBot?start=magiclink_${userGroupId}`}>Launch 🤖</Button.Link>
-          ]
-      })
-    }
-
-
     return c.res({
-      image: (
-        <>
-          <Box
-            grow
-            alignVertical="center"
-            backgroundColor='secondary'
-            color='primary'
-            padding='128'
-            height={'100%'}
-
-          // border="1em solid rgb(138, 99, 210)"
-          >
-            <VStack gap="20">
-              <Heading align="center" size="48">
-                Profile Creation:
-              </Heading>
-              <Box gap={'10'}>
-                <Text align="center" size="20">
-                  {label}
-                </Text>
-                {sublabel.length > 1 ? <Text size='16' align="center" color={isError ? 'red' : undefined}>{sublabel}</Text> : <></>}
-
-              </Box>
-            </VStack>
-          </Box>
-        </>
-      ),
+      image: `/frame-slides/${hub}/${image}.png`,
       intents: info !== 'end' ? [
 
         <TextInput placeholder={placeholder} />,
         // ...[previous !== '' ? 
-        <Button action={`/add_profile_data/${previous}`}>Back</Button>,
+        <Button action={`/add_profile_data/${hub.code}/${previous}`}>Back</Button>,
         //  :
         // <Button.Reset>♻️Reset</Button.Reset>,
         // ],
         <Button
-          action={`/add_profile_data/${next}`}
-        >Save and Continue</Button>,
+          action={`/add_profile_data/${hub.code}/${next}`}
+        >Next </Button>,
 
       ] :
         [
-          <Button.Link href={`https://t.me/CovarianceBot?start=magic_${userGroupId}`}>🤖 Chat with CovarianceAiBot</Button.Link>
+          <Button.Link href={`https://t.me/CovarianceBot?start=magiclink_${userGroupId}`}>Launch 🤖</Button.Link>
         ]
     })
 
+
   } catch (e) {
     const error = e as Error
-    console.error(`Error in add_profile_data`, error);
+    console.error(`Error in add_profile_data/${hub.code}`, error);
 
     return c.error({ message: error.message })
   }

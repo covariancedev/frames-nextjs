@@ -1,5 +1,11 @@
 import { getEnvOrThrow } from "./misc";
 
+type Hub = {
+  name: "Covariance" | "CoOwnCaster";
+  id: string;
+  code: "covariance" | "coowncaster";
+};
+
 export default {
   inviteCode: "recEIenGo8Sfgr3F1",
   farquestApiKey: getEnvOrThrow("FARQUEST_API_KEY"),
@@ -26,5 +32,10 @@ export default {
       id: "recZmdQC0qwTh1PWE",
       code: "covariance",
     },
-  ],
+    {
+      name: "CoOwnCaster",
+      id: "rec9xw8Q3EYpQwNx9",
+      code: "coowncaster",
+    },
+  ] as Hub[],
 };
