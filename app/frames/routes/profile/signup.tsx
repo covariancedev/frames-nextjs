@@ -314,7 +314,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           // remove "@" from username
           telegramUsername = telegramUsername.replace('@', '').trim().toLowerCase()
           if (state.profileId) {
-            const hubs = [...state.hubs, hub.id]
+            const hubs = [...new Set<string>([...state.hubs, hub.id])]
             console.log(`Updating existing contributor for ${farcasterUrl}`, state.profileId, { hubs });
             const updated = await airtable.contributors.update(state.profileId!, {
               Hubs: hubs,

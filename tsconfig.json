@@ -15,6 +15,7 @@
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "downlevelIteration": true,
     "jsx": "preserve",
     "incremental": true,
     "plugins": [
