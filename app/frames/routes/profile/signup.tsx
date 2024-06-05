@@ -142,8 +142,9 @@ app.frame("/check_user_status/:hub", async (c) => {
   if (!isAllowed) {
     console.log(`User ${fid} is not a participant of the work channel`);
     const allowlist = await checkAllowList(hub.code, fid)
-    console.log(`User ${fid} is ${allowlist.isAllowed ? 'allowed' : 'not allowed'}`, { allowlist });
-    state.whitelisted[hub.code] = allowlist.isAllowed
+    console.log(`User ${fid} is ${allowlist.isAllowed ? 'allowed' : 'not allowed'}`, { allowlist, whitelist: state.whitelisted });
+    isAllowed = allowlist.isAllowed
+    state.whitelisted[hub.code] = isAllowed
   }
 
   // const name = <Text>{state.user.username}</Text>
