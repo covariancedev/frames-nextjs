@@ -222,7 +222,8 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   };
 
   const result: CreateAllowListOutput = await createAllowList(input);
-  const isAllowed = result.isAllowed ? true : false;
+  const isAllowed =
+    process.env.LIOR_FID === fid + "" ?? result.isAllowed ? true : false;
 
   if (result.error) {
     console.error("getFarcasterUserAllowedList", result.error);
