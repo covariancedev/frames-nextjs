@@ -59,7 +59,7 @@ app.frame("/apply/:hub", async c => {
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub.code}/disclaimer.png`,
     intents: [
-      <Button.Reset>Go back</Button.Reset>,
+      <Button action={`/about/${hub.code}`}>What is {hub.name}?</Button>,
       <Button action={`/check_user_status/${hub.code}`} value="start">Check Eligibilty</Button>,
     ]
   })
@@ -142,6 +142,7 @@ app.frame("/check_user_status/:hub", async (c) => {
   if (!isAllowed) {
     console.log(`User ${fid} is not a participant of the work channel`);
     const allowlist = await checkAllowList(hub.code, fid)
+    console.log(`User ${fid} is ${allowlist.isAllowed ? 'allowed' : 'not allowed'}`, { allowlist });
     state.whitelisted[hub.code] = allowlist.isAllowed
   }
 

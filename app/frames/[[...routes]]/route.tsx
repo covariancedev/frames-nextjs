@@ -76,8 +76,7 @@ app.frame("/", c => {
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub.code}/intro.png`,
     intents: [
-      <Button action={`/profile_signup/about/${hub.code}`}>What is {hub.name}?</Button>,
-      <Button action={`/profile_signup/apply/${hub.code}`}>Apply</Button>
+      <Button action={`/profile_signup/apply/${hub.code}`}>Click here</Button>
     ]
   })
 }
