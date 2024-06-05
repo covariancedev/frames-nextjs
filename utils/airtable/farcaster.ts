@@ -38,7 +38,7 @@ export async function addFarcasterInfo(
       fid,
       fnames: fnames.map((f) => "- " + f).join("\n"),
       displayName,
-      fldixPzLtIfgkEEiT: [contributorId],
+      "Contributor name": [contributorId],
       addressTypes,
       pfp: [{ url: pfp }],
       bio,

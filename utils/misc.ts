@@ -20,3 +20,5 @@ export function extractWarpcastHandle(url: string) {
   );
   return match?.groups?.handle ? match.groups.handle.toLowerCase() : null;
 }
+
+export const isDev = process.env.NODE_ENV === "development";

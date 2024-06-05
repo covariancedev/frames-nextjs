@@ -1,4 +1,4 @@
-import { getEnvOrThrow } from "./misc";
+import { getEnvOrThrow, isDev } from "./misc";
 
 type Hub = {
   name: "Covariance" | "CoOwnCaster";
@@ -19,7 +19,7 @@ export default {
         contributors: getEnvOrThrow("AIRTABLE_CONTRIBUTORS_TABLE_ID"),
         farcaster: getEnvOrThrow("AIRTABLE_FARCASTER_PROFILE_TABLE_ID"),
         user_group:
-          process.env.AIRTABLE_USER_GROUP_TABLE_ID || "tblHb3Gme0EplWznL",
+          process.env.AIRTABLE_USER_GROUP_TABLE_ID || "tblW3sBlsBvbN66qV",
       },
     },
   },
@@ -31,7 +31,7 @@ export default {
   hubs: [
     {
       name: "Covariance",
-      id: "recZmdQC0qwTh1PWE",
+      id: isDev ? "receeCLBe1nFJbmZO" : "recZmdQC0qwTh1PWE",
       code: "covariance",
       aboutUrl:
         "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
@@ -39,7 +39,7 @@ export default {
     },
     {
       name: "CoOwnCaster",
-      id: "rec9xw8Q3EYpQwNx9",
+      id: isDev ? "recopV3PhfPbiGkAj" : "rec9xw8Q3EYpQwNx9",
       code: "coowncaster",
       aboutUrl:
         "https://paragraph.xyz/@0xcovariance.eth/preview/wua2eCFM7JnRSNHcbgIO",
