@@ -206,12 +206,17 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
     allowListCriteria,
     isAllowedFunction: function (data) {
       console.log(
-        `getFarcasterUserAllowedList.isAllowedFunction >> data`,
+        `getCoOwnCasterUserAllowedList.isAllowedFunction >> data`,
         data
       );
       const tokens = data.isTokensHold?.filter((t) => t.isHold);
+      console.log(
+        `getCoOwnCasterUserAllowedList.isAllowedFunction >> User ${fid} is holding tokens`,
+        tokens?.length ?? 0,
+        `tokens out of ${data.isTokensHold?.length}`
+      );
 
-      if (tokens) {
+      if (tokens?.length) {
         for (const token of tokens) {
           tokensHolding.push(token);
         }
@@ -222,10 +227,15 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   };
 
   const result: CreateAllowListOutput = await createAllowList(input);
+  console.log("getCoOwnCasterUserAllowedList >> result", result);
   const adminFids = Array.from(
     JSON.parse(process.env.ADMIN_FIDS ?? "[]")
   ) as number[];
-  const isAllowed = adminFids.includes(fid) ?? result.isAllowed ? true : false;
+  const isAllowed = adminFids.includes(fid)
+    ? true
+    : result.isAllowed
+    ? true
+    : false;
 
   if (result.error) {
     console.error("getFarcasterUserAllowedList", result.error);
