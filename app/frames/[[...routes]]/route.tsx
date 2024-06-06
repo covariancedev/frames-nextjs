@@ -14,6 +14,7 @@ import profileSignupFrame from '../routes/profile/signup'
 import { Button } from 'frog'
 import config from '@/utils/config'
 import { ErrorImage } from '../utils/errors'
+import { withAxiom } from 'next-axiom'
 
 
 const app = new Frog({
@@ -85,5 +86,5 @@ app.frame("/", c => {
 
 devtools(app, { serveStatic })
 
-export const GET = handle(app)
-export const POST = handle(app)
+export const GET = withAxiom(handle(app))
+export const POST = withAxiom(handle(app))
