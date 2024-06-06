@@ -66,6 +66,17 @@ export async function getContributorFarcasterInfo(fid: number) {
   return res.length ? res[0] : null;
 }
 
+export async function checkFarcasterInfo(fid: string | number) {
+  const res = await airtable.farcaster
+    .select({
+      filterByFormula: `{fid} = ${fid}`,
+      maxRecords: 1,
+    })
+    .all();
+
+  return res.length ? res[0] : null;
+}
+
 export async function saveContributorFarcasterInfo(
   fid: string,
   data: Record<string, unknown>

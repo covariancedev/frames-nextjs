@@ -4,7 +4,7 @@ import { Button, Frog, TextInput } from "@airstack/frog";
 import { checkAllowList, getFarQuestUserDetails, getFcUser } from "@/utils/farcaster";
 // import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
-import { addFarcasterInfo } from "@/utils/airtable/farcaster";
+import { addFarcasterInfo, checkFarcasterInfo } from "@/utils/airtable/farcaster";
 import config from "@/utils/config";
 import { ErrorImage } from "../../utils/errors";
 
@@ -244,9 +244,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           state.hubs.push(...hubs)
           const foundInHub = hubs.find(h => h.toLowerCase() === hub.id)
           isPartOfHub = !!foundInHub
-          state.hasFCUrl = existingContributorFromFid[0]?.fields.Farcaster === farcasterUrl
           const ugid = existingContributorFromFid[0]?.fields["User Groups"] as string[]
-          console.log(`existingContributorFromFid`, state.profileId, { Hubs: hubs, foundInHub, "User Groups": ugid, isPartOfHub, hasFCUrl: state.hasFCUrl });
+          console.log(`existingContributorFromFid`, state.profileId, { Hubs: hubs, foundInHub, "User Groups": ugid, isPartOfHub, });
           const hasTg = existingContributorFromFid[0]?.fields?.Telegram ? true : false
           console.log(`hasTg`, hasTg);
           if (ugid.length > 0) {
@@ -288,36 +287,38 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         // const dbProfile = await airtable.contributors.select({ filterByFormula: `{Farcaster} = '${farcasterUrl}'`, maxRecords: 1 }).all()
 
         const fcUser = await getFcUser(state.user.username)
+        const fcData = await checkFarcasterInfo(fcUser.fid)
+        state.hasFCUrl = fcData ? true : false
+        console.log(`add_profile_data/${hub.code} >> hasFCUrl? ${state.hasFCUrl}`);
 
         if (!state.userGroupId) {
-          console.log(`User group not found for ${hubInfo?.email} in state. Checking Airtable...`);
+          console.log(`add_profile_data/${hub.code} >> User group not found for ${hubInfo?.email} in state. Checking Airtable...`);
           const existingUserGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 }).all()
           const user = existingUserGroup[0]
-          console.log(`Adding new user group for ${hubInfo?.email}`, user?.id)
+          console.log(`add_profile_data/${hub.code} >> Adding new user group for ${hubInfo?.email}`, user?.id)
           const userGroup = user ? user : await airtable.user_group.create({
             "Name": hubInfo.name as string,
             "E-mail": hubInfo.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
           })
-          console.log(`created user group for ${hubInfo?.email}`, userGroup.id);
+          console.log(`add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`, userGroup.id);
 
           state.userGroupId = userGroup.id
 
         } // end if userGroupId is empty
 
         if (!state.profileId) {
-          console.log(`Checking if user is already in the hub...`);
+          console.log(`add_profile_data/${hub.code} >> Checking if user is already in the hub...`);
           const contributorByEmail = await airtable.contributors.select({ filterByFormula: `OR({Email} = '${email}', {Farcaster} = '${farcasterUrl}')`, maxRecords: 1 }).all()
 
           const contributor = contributorByEmail[0]
           if (contributor) {
-            console.log(`contributorByEmail >> contributor`, contributor.id, { Hubs: contributor?.fields?.Hubs, "User Groups": contributor?.fields?.["User Groups"] });
+            console.log(`add_profile_data/${hub.code} >> contributorByEmail >> contributor`, contributor.id, { Hubs: contributor?.fields?.Hubs, "User Groups": contributor?.fields?.["User Groups"] });
 
             state.profileId = contributor?.id
-            state.hasFCUrl = contributor.fields.Farcaster === farcasterUrl
 
           } else {
-            console.log(`User not found in the hub ${hub.code}...`);
+            console.log(`add_profile_data/${hub.code} >> User not found in the hub ${hub.code}...`);
           }
 
         }
@@ -330,16 +331,16 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           telegramUsername = telegramUsername?.replace('@', '').trim().toLowerCase()
           if (state.profileId) {
             const hubs = [...new Set<string>([...state.hubs, hub.id])]
-            console.log(`Updating existing contributor for ${farcasterUrl}`, state.profileId, { hubs });
+            console.log(`add_profile_data/${hub.code} >> Updating existing contributor for ${farcasterUrl}`, state.profileId, { hubs });
             const updated = await airtable.contributors.update(state.profileId!, {
               Hubs: hubs,
               Farcaster: `https://warpcast.com/${state.user.username}`,
               ...(telegramUsername ? { "Telegram": `https://t.me/${telegramUsername}`, } : {})
 
             })
-            console.log(`updated contributor profile for ${farcasterUrl}`, updated.fields.Hubs);
+            console.log(`add_profile_data/${hub.code} >> updated contributor profile for ${farcasterUrl}`, updated.fields.Hubs);
           } else {
-            console.log(`Creating new contributor for ${farcasterUrl}`);
+            console.log(`add_profile_data/${hub.code} >> Creating new contributor for ${farcasterUrl}`);
             const profile =
               await airtable.contributors.create({
                 Name: hubInfo.name as string,
@@ -357,11 +358,13 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
               },
                 { typecast: true }
               )
-            console.log(`created contributor profile for ${farcasterUrl}`, profile?.fields);
+            console.log(`add_profile_data/${hub.code} >> created contributor profile for ${farcasterUrl}`, profile?.fields);
             state.profileId = (profile as unknown as { id: string }).id
           }
 
         }
+
+
 
         await addFarcasterInfo(fcUser, state.profileId!, state.hasFCUrl)
         // await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
@@ -395,12 +398,9 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             if (!email.includes('@')) {
               message = `Invalid email address captured`
             } else {
-              console.log(`user not found for ${hubInfo?.email}`);
               break checkingErrors
             }
           } else {
-
-            console.log(`info: ${info}`);
 
             break checkingErrors
           }
