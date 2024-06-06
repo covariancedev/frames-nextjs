@@ -177,7 +177,7 @@ app.frame("/check_user_status/:hub", async (c) => {
         <Button action={`/apply/${hub.code}`}>{"🔙"}</Button>,
         <Button action={`/add_profile_data/${hub.code}/start`}>Create Profile</Button>
       ] :
-      [<Button.Link href="https://app.covariance.network/sign-up">Apply via Website</Button.Link>]
+      [<Button.Link href="https://app.covariance.network/registration">Apply via Website</Button.Link>]
   })
 })
 
