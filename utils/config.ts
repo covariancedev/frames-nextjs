@@ -42,7 +42,7 @@ export default {
       id: isDev ? "recopV3PhfPbiGkAj" : "rec9xw8Q3EYpQwNx9",
       code: "coowncaster",
       aboutUrl:
-        "https://paragraph.xyz/@0xcovariance.eth/preview/wua2eCFM7JnRSNHcbgIO",
+        "https://paragraph.xyz/@0xcovariance.eth/coowncaster-an-experiment-in-co-ownership",
       website: "https://app.covariance.network/coowncaster",
     },
   ] as Hub[],
