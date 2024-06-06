@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@airstack/frog": "^0.0.14",
+    "@baselime/node-opentelemetry": "^0.5.8",
     "@resvg/resvg-js": "^2.6.2",
     "@upstash/redis": "^1.30.0",
     "airtable": "^0.12.2",

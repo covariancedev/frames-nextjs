@@ -21,6 +21,7 @@ const nextConfig = {
       "@olli/kvdex",
       "@deno/kv",
     ],
+    instrumentationHook: true,
   },
   webpack: (config) => {
     config.externals.push({
