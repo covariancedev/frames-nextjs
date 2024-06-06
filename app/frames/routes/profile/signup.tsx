@@ -290,20 +290,23 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         const fcUser = await getFcUser(state.user.username)
 
         if (!state.userGroupId) {
+          console.log(`User group not found for ${hubInfo?.email} in state. Checking Airtable...`);
           const existingUserGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 }).all()
           const user = existingUserGroup[0]
-          console.log(`Adding new user group for ${hubInfo?.email}`)
+          console.log(`Adding new user group for ${hubInfo?.email}`, user?.id)
           const userGroup = user ? user : await airtable.user_group.create({
             "Name": hubInfo.name as string,
             "E-mail": hubInfo.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
           })
+          console.log(`created user group for ${hubInfo?.email}`, userGroup.id);
 
           state.userGroupId = userGroup.id
 
         } // end if userGroupId is empty
 
         if (!state.profileId) {
+          console.log(`Checking if user is already in the hub...`);
           const contributorByEmail = await airtable.contributors.select({ filterByFormula: `OR({Email} = '${email}', {Farcaster} = '${farcasterUrl}')`, maxRecords: 1 }).all()
 
           const contributor = contributorByEmail[0]
@@ -313,6 +316,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             state.profileId = contributor?.id
             state.hasFCUrl = contributor.fields.Farcaster === farcasterUrl
 
+          } else {
+            console.log(`User not found in the hub ${hub.code}...`);
           }
 
         }
@@ -352,7 +357,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
               },
                 { typecast: true }
               )
-            console.log(`created contributor profile for ${farcasterUrl}`, profile.fields);
+            console.log(`created contributor profile for ${farcasterUrl}`, profile?.fields);
             state.profileId = (profile as unknown as { id: string }).id
           }
 
