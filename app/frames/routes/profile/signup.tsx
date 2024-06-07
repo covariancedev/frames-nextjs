@@ -1,12 +1,13 @@
 /** @jsxImportSource @airstack/frog/jsx */
 import { Box, Heading, Text, VStack, vars } from "@/utils/ui";
-import { Button, Frog, TextInput } from "@airstack/frog";
+import { Button, FrameIntent, Frog, TextInput } from "@airstack/frog";
 import { checkAllowList, getFarQuestUserDetails, getFcUser } from "@/utils/farcaster";
 // import { redis } from "@/utils/redis";
 import { airtable } from "@/utils/airtable/client";
 import { addFarcasterInfo, checkFarcasterInfo } from "@/utils/airtable/farcaster";
 import config from "@/utils/config";
 import { ErrorImage } from "../../utils/errors";
+import { isDev } from "@/utils/misc";
 
 type State = {
   info: Record<string, unknown>
@@ -17,6 +18,7 @@ type State = {
   profileId?: string
   hasFCUrl: boolean
   hubs: string[]
+  magicLink?: string
   user?: Awaited<ReturnType<typeof getFarQuestUserDetails>>
 }
 
@@ -199,7 +201,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
   const state = deriveState(previousState => {
     if (inputText && !['start'].includes(info)) {
       const hubState = previousState.info[hub.code] as Record<string, unknown>
-      hubState[info === 'end' ? 'telegram' : info] = inputText
+      hubState[info === 'launch' ? 'telegram' : info] = inputText
       previousState.info[hub.code] = hubState
     }
 
@@ -226,7 +228,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
   let isError = false
   let isPartOfHub = false
 
-  const saveToDb = true// !isDev
+  const saveToDb = true//!isDev
   console.log(`add_profile_data/${hub.code} >> info: ${info}`, { hubInfo, state });
 
   try {
@@ -248,7 +250,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           console.log(`existingContributorFromFid`, state.profileId, { Hubs: hubs, foundInHub, "User Groups": ugid, isPartOfHub, });
           const hasTg = existingContributorFromFid[0]?.fields?.Telegram ? true : false
           console.log(`hasTg`, hasTg);
-          if (ugid.length > 0) {
+          if (ugid?.length > 0) {
 
             const user = await airtable.user_group.find(ugid[0])
 
@@ -269,14 +271,14 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
               telegram: existingContributorFromFid[0]?.fields?.Telegram
             }
           }
-          info = 'end'
+          info = 'finished'
         }
         break checkExistingFarcasterUser
       }
     }
 
 
-    if (info === 'end') {
+    if (info === 'finished') {
       console.log(`add_profile_data/${hub.code} >> farcasterUrl: ` + `https://warpcast.com/${state.user.username}`);
       console.log(`add_profile_data/${hub.code} >> hubInfo: `, hubInfo);
 
@@ -295,15 +297,32 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           console.log(`add_profile_data/${hub.code} >> User group not found for ${hubInfo?.email} in state. Checking Airtable...`);
           const existingUserGroup = await airtable.user_group.select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 }).all()
           const user = existingUserGroup[0]
-          console.log(`add_profile_data/${hub.code} >> Adding new user group for ${hubInfo?.email}`, user?.id)
-          const userGroup = user ? user : await airtable.user_group.create({
-            "Name": hubInfo.name as string,
-            "E-mail": hubInfo.email as string,
-            // "Farcaster": `https://warpcast.com/${state.user.username}`
-          })
-          console.log(`add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`, userGroup.id);
 
-          state.userGroupId = userGroup.id
+          if (user) {
+            console.log(`add_profile_data/${hub.code} >> User group found for ${hubInfo?.email}`, user.id);
+            const userGroups = user.fields["User Groups"] as string[]
+            const foundInUserGroup = userGroups.find(ug => ug === hub.name)
+            if (!foundInUserGroup) {
+              console.log(`add_profile_data/${hub.code} >> Adding hub to existing user group for ${hubInfo?.email}`, user.id);
+              const updated = await airtable.user_group.update(user.id, {
+                "User Groups": [...userGroups, hub.name]
+              })
+              console.log(`add_profile_data/${hub.code} >> updated user group for ${hubInfo?.email}`, updated.fields.Hubs);
+            }
+            state.userGroupId = user.id
+          } else {
+            console.log(`add_profile_data/${hub.code} >> Creating new user group for ${hubInfo?.email}`);
+            const userGroup = user ? user : await airtable.user_group.create({
+              "Name": hubInfo.name as string,
+              "E-mail": hubInfo.email as string,
+              // "Farcaster": `https://warpcast.com/${state.user.username}`
+              "User Groups": [hub.name]
+
+            })
+            console.log(`add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`, userGroup.id);
+
+            state.userGroupId = userGroup.id
+          }
 
         } // end if userGroupId is empty
 
@@ -369,9 +388,39 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         await addFarcasterInfo(fcUser, state.profileId!, state.hasFCUrl)
         // await redis.hset(`${hub}_contributors_${isDev ? 'test' : 'live'}:${fid}`, fcUser)
       }
+    } else if (info === 'launch') {
+      if (saveToDb) {
+        if (hub.code === 'coowncaster') {
+          // run a loop to check if magic link is generated. Max of 5 retries
+          // will repeat every 1 second
+          let retries = 0
+          while (!state.magicLink) {
+            if (retries > 5) {
+              break
+            }
+            try {
+              const usergroup = await airtable.user_group.find(state.userGroupId!)
+              if (usergroup) {
+                state.magicLink = usergroup.fields['Magic Link'] as string | undefined
+                if (state.magicLink) {
+                  console.log(`add_profile_data/${hub.code} >> Magic Link found for @${state.user.username}`, state.magicLink);
+                  break
+                }
+              }
+              retries++
+              // wait for 1 second
+              await new Promise(resolve => setTimeout(resolve, 1000))
+
+            } catch {
+              // 
+            }
+          }
+        }
+
+      }
     }
 
-    const checkError = !['end', 'start'].includes(info)
+    const checkError = !['launch', 'start'].includes(info)
     let emailExists = false
     let magicLink: string | undefined = undefined
     let image = ''
@@ -453,21 +502,21 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 
     // 1. email (default)
     // 2. name
-    // 3. telegram username
-    // 4. end
+    // 3. telegram username (wip)
+    // 4. finished
+    // 5. launch
     switch (info) {
 
       case 'email': {
-        next = 'name'
+        next = hub.code === 'coowncaster' ? 'finished' : 'name'
         previous = 'start'
         placeholder = "John Doe"
         image = 'name'
-        label = "What's your full name?"
       }
         break
 
       case 'name': {
-        next = "end"
+        next = 'finished'
         previous = "email"
         label = "What's your telegram username?"
         image = 'telegram'
@@ -476,9 +525,13 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       }
         break;
 
-      case 'end': {
-        label = "Thank you for providing your information."
-        sublabel = `Have a chat with our telegram bot for the group link and login information.`
+      case 'finished': {
+        image = 'magic-link'
+        next = 'launch'
+      }
+        break;
+
+      case 'launch': {
         image = 'finished'
       }
         break;
@@ -486,38 +539,52 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       default: {
         next = 'email'
         placeholder = "email@example.com"
-        label = "What's your email address?"
         image = 'email'
-        sublabel = "This will be used to create your profile on the app so you can login."
       }
         break
     }
 
-    image = info === 'end' ? image : `${image}-${isError ? 'error' : 'input'}`
+    image = ['launch', 'finished'].includes(info) ? image : `${image}-${isError ? 'error' : 'input'}`
     console.log(`info: ${info}`, {
       next, previous, placeholder, label, sublabel, image
 
     });
 
+    const intents: FrameIntent[] = []
+
+    if (info !== 'launch') {
+      console.log(`add_profile_data/${hub.code} >> intents`, { next, previous, placeholder, label, sublabel, image });
+
+      if (next === 'launch' && hub.code === 'coowncaster') {
+        intents.push(
+          <Button action={`/add_profile_data/${hub.code}/${next}`}>Generate Magic Link</Button>
+        )
+      } else {
+        intents.push(...[
+          <TextInput placeholder={placeholder} />,
+          <Button action={`/add_profile_data/${hub.code}/${previous}`}>Back</Button>,
+          <Button action={`/add_profile_data/${hub.code}/${next}`}>Next</Button>
+        ])
+
+      }
+
+    } else {
+      if (hub.code === 'coowncaster') {
+
+        intents.push(
+          <Button.Link href={`${state.magicLink}`}>Launch app</Button.Link>
+        )
+      } else {
+        intents.push(
+          <Button.Link href={`https://t.me/CovarianceBot?start=magiclink_${state.userGroupId}`}>Launch Telegram Bot 🤖</Button.Link>
+        )
+      }
+    }
+
 
     return c.res({
       image: `/frame-slides/${hub.code}/${image}.png`,
-      intents: info !== 'end' ? [
-
-        <TextInput placeholder={placeholder} />,
-        // ...[previous !== '' ? 
-        <Button action={`/add_profile_data/${hub.code}/${previous}`}>Back</Button>,
-        //  :
-        // <Button.Reset>♻️Reset</Button.Reset>,
-        // ],
-        <Button
-          action={`/add_profile_data/${hub.code}/${next}`}
-        >Next </Button>,
-
-      ] :
-        [
-          <Button.Link href={`https://t.me/CovarianceBot?start=magiclink_${state.userGroupId}`}>Launch 🤖</Button.Link>
-        ]
+      intents
     })
 
 
