@@ -266,6 +266,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 
             }
             state.userGroupId = user.id
+            hubInfo.name = hubInfo.name ?? user.fields.Name as string
             console.log(`user group for ${state.user.fid}`, user.fields.Name);
             // return c.error({ message: 'You are already here' })
             if (!hasTg) {
@@ -282,6 +283,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             if (existingUserGroup.length > 0) {
               const user = existingUserGroup[0]
               state.userGroupId = user.id
+              hubInfo.name = hubInfo.name ?? user.fields.Name as string
 
             } else {
               break checkExistingFarcasterUser
@@ -319,6 +321,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
               if (existingUser.length > 0) {
                 console.log(`add_profile_data/${hub.code} >> User already exists in the user group`, existingUser[0].id);
                 state.userGroupId = existingUser[0].id
+                hubInfo.name = hubInfo.name ?? existingUser[0].fields.Name as string
                 info = 'finished'
               }
               break checkingErrors
