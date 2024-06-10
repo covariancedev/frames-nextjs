@@ -598,7 +598,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
     if (info !== 'launch') {
       if (next === 'launch' && hub.code === 'coowncaster') {
         intents.push(
-          <Button action={`/add_profile_data/${hub.code}/${next}`}>Generate Magic Link</Button>
+          <Button action={`/add_profile_data/${hub.code}/${next}`}>Click to Log-in</Button>
         )
       } else {
         intents.push(...[
