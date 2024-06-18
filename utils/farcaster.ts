@@ -154,9 +154,9 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         chain: TokenBlockchain.Ethereum,
       },
       {
-        // FarCon 2
+        // FarCon 2(Zora:Base)
         tokenAddress: "0x43ad2d5bd48de6d20530a48b5c357e26459afb3c",
-        chain: TokenBlockchain.Base,
+        chain: TokenBlockchain.Zora,
       },
       {
         // WeCast
@@ -169,7 +169,7 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         chain: TokenBlockchain.Base,
       },
       {
-        // CoCreated Launch (Zora) /4
+        // CoCreated Launch (Zora) 2/4/5
         tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
         chain: TokenBlockchain.Zora,
       },
