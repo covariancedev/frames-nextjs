@@ -231,6 +231,14 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   const adminFids = Array.from(
     JSON.parse(process.env.ADMIN_FIDS ?? "[]")
   ) as number[];
+
+  // Add ids here inside [] and separate by comma, eg: [12323,343]
+  const manualIds: number[] = [];
+
+  if (manualIds.length) {
+    adminFids.push(...manualIds);
+  }
+
   const isAllowed = adminFids.includes(fid)
     ? true
     : result.isAllowed
