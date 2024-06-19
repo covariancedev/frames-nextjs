@@ -12,6 +12,7 @@ import {
   FarcasterChannelActionType,
 } from "@airstack/frog";
 import { fetchFidsFromGists } from "./gists";
+import { getCollectionAllowList } from "./zora";
 
 export async function getAirstackUserDetails(id: string | number) {
   const fid = typeof id === "string" ? Number(id) : id;
@@ -161,36 +162,33 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
         chain: TokenBlockchain.Base,
       },
-      // {
-      //   // SomeSocial (Base)
-      //   tokenAddress: "0x27EF05bA3097Ffe5037ec4c03152cf9725f7E037",
-      //   chain: TokenBlockchain.Base,
-      // },
-      // {//
-      //   // CoCreated Launch (Base) 4
-      //   tokenAddress: "0x89322c05373458d3b499b0b9e9a97b723cdd2dc0",
-      //   chain: TokenBlockchain.Base,
-      // },
-      // {//0x89322c05373458d3b499b0b9e9a97b723cdd2dc0
-      //   // CoCreated Launch (Zora) 2/4/5
-      //   tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
-      //   chain: TokenBlockchain.Base,
-      // },
-      // {//0x89322c05373458d3b499b0b9e9a97b723cdd2dc0
-      //   // CoCreated Launch (Zora) 2/4/5
-      //   tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
-      //   chain: TokenBlockchain.Base,
-      // },
-      // {
-      //   // We are Farcaster  (Base)
-      //   tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
-      //   chain: TokenBlockchain.Base,
-      // },
-      // {
-      //   // Failure Contract (Zora)
-      //   tokenAddress: "0x7363d7498c0d11f8698049ecd15a7ffda4a015c8",
-      //   chain: TokenBlockchain.Zora,
-      // },
+      {
+        // SomeSocial (Base)
+        tokenAddress: "0x27EF05bA3097Ffe5037ec4c03152cf9725f7E037",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        //
+        // CoCreated Launch (Base) 4
+        tokenAddress: "0x89322c05373458d3b499b0b9e9a97b723cdd2dc0",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        //0x89322c05373458d3b499b0b9e9a97b723cdd2dc0
+        // CoCreated Launch (Zora) 2/4/5
+        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // We are Farcaster  (Base)
+        tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
+        chain: TokenBlockchain.Base,
+      },
+      {
+        // Failure Contract (Zora)
+        tokenAddress: "0x7363d7498c0d11f8698049ecd15a7ffda4a015c8",
+        chain: TokenBlockchain.Base,
+      },
     ],
   };
 
@@ -202,11 +200,8 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   const input: CreateAllowListInput = {
     fid,
     allowListCriteria,
-    isAllowedFunction: (data) => {
-      console.log(
-        "getCoOwnCasterUserAllowedList.isAllowedFunction >> data",
-        data
-      );
+    isAllowedFunction: async (data) => {
+      const list = await getCollectionAllowList(fid);
       const tokens = data.isTokensHold?.filter((t) => t.isHold);
       console.log(
         `getCoOwnCasterUserAllowedList.isAllowedFunction >> User ${fid} is holding tokens`,
@@ -216,6 +211,11 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
 
       if (tokens?.length) {
         for (const token of tokens) {
+          if (
+            token.tokenAddress === "0xe2fb0e28d391ca747481b3f0dff906644416fac9"
+          ) {
+            token.isHold = list.length > 0 ? true : token.isHold;
+          }
           tokensHolding.push(token);
         }
       }
