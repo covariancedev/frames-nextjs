@@ -1,5 +1,7 @@
-import config from "./config";
-const { fidsFile } = config;
+export const fidsFile = {
+  id: "58a2586aacc3d432fb2ee0e60f1c1552",
+  name: "ff6825671f24440e9f3648a689ccee76.txt",
+};
 
 export const fetchFidsFromGists = async () => {
   const response = await fetch(`https://api.github.com/gists/${fidsFile.id}`, {

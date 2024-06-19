@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { SidebarNav } from "./components/sidebar-nav";
 import { Separator } from "@/components/ui/separator";
-import config from "@/utils/config";
+import { fidsFile } from "@/utils/gists";
 
 export const metadata: Metadata = {
   title: "Forms",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const sidebarNavItems = [
   {
     title: "Manual Allow list",
-    href: `/${config.fidsFile.id}`,
+    href: `/${fidsFile.id}`,
   },
   //   {
   //     title: "Account",

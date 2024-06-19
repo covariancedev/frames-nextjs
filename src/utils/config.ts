@@ -46,8 +46,4 @@ export default {
       website: "https://app.covariance.network/coowncaster",
     },
   ] as Hub[],
-  fidsFile: {
-    id: "58a2586aacc3d432fb2ee0e60f1c1552",
-    name: "ff6825671f24440e9f3648a689ccee76.txt",
-  },
 };
