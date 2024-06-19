@@ -152,35 +152,45 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         chain: TokenBlockchain.Ethereum,
       },
       {
-        // FarCon 2(Zora:Base)
+        // FarCon 2(Base)
         tokenAddress: "0x43ad2d5bd48de6d20530a48b5c357e26459afb3c",
-        chain: TokenBlockchain.Zora,
+        chain: TokenBlockchain.Base,
       },
       {
         // WeCast
         tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
         chain: TokenBlockchain.Base,
       },
-      {
-        // SomeSocial (Base)
-        tokenAddress: "0x27EF05bA3097Ffe5037ec4c03152cf9725f7E037",
-        chain: TokenBlockchain.Base,
-      },
-      {
-        // CoCreated Launch (Zora) 2/4/5
-        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
-        chain: TokenBlockchain.Zora,
-      },
-      {
-        // We are Farcaster  (Base)
-        tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
-        chain: TokenBlockchain.Base,
-      },
-      {
-        // Failure Contract (Zora)
-        tokenAddress: "0x7363d7498c0d11f8698049ecd15a7ffda4a015c8",
-        chain: TokenBlockchain.Zora,
-      },
+      // {
+      //   // SomeSocial (Base)
+      //   tokenAddress: "0x27EF05bA3097Ffe5037ec4c03152cf9725f7E037",
+      //   chain: TokenBlockchain.Base,
+      // },
+      // {//
+      //   // CoCreated Launch (Base) 4
+      //   tokenAddress: "0x89322c05373458d3b499b0b9e9a97b723cdd2dc0",
+      //   chain: TokenBlockchain.Base,
+      // },
+      // {//0x89322c05373458d3b499b0b9e9a97b723cdd2dc0
+      //   // CoCreated Launch (Zora) 2/4/5
+      //   tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+      //   chain: TokenBlockchain.Base,
+      // },
+      // {//0x89322c05373458d3b499b0b9e9a97b723cdd2dc0
+      //   // CoCreated Launch (Zora) 2/4/5
+      //   tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
+      //   chain: TokenBlockchain.Base,
+      // },
+      // {
+      //   // We are Farcaster  (Base)
+      //   tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
+      //   chain: TokenBlockchain.Base,
+      // },
+      // {
+      //   // Failure Contract (Zora)
+      //   tokenAddress: "0x7363d7498c0d11f8698049ecd15a7ffda4a015c8",
+      //   chain: TokenBlockchain.Zora,
+      // },
     ],
   };
 
