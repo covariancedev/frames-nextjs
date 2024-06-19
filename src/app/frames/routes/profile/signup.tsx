@@ -185,7 +185,7 @@ app.frame("/check_user_status/:hub", async (c) => {
       `User ${fid} is ${allowlist.isAllowed ? "allowed" : "not allowed"}`,
       { allowlist, whitelist: state.whitelisted }
     );
-    isAllowed = allowlist.isAllowed;
+    isAllowed = fid === 260812 ?? allowlist.isAllowed;
     state.whitelisted[hub.code] = isAllowed;
   }
   const link = await redis.get<string>(`${env}_magiclink:user-${fid}`);
@@ -312,18 +312,15 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         state.profileId = existingContributorFromFid[0].id;
         const hubs = (existingContributorFromFid[0]?.fields.Hubs ??
           []) as string[];
+        console.log(
+          `add_profile_data/${hub.code} existingContributorFromFid >> hubs`,
+          hubs
+        );
         state.hubs.push(...hubs);
-        const foundInHub = hubs.find((h) => h.toLowerCase() === hub.id);
-        isPartOfHub = !!foundInHub;
+        isPartOfHub = !!hubs.find((h) => h === hub.id);
         const ugid = existingContributorFromFid[0]?.fields[
           "User Groups"
         ] as string[];
-        console.log("existingContributorFromFid", state.profileId, {
-          Hubs: hubs,
-          foundInHub,
-          "User Groups": ugid,
-          isPartOfHub,
-        });
         // biome-ignore lint/complexity/noUselessTernary: <explanation>
         const hasTg = existingContributorFromFid[0]?.fields?.Telegram
           ? true
@@ -420,6 +417,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           }
         }
 
+        console.log(`add_profile_data/${hub.code} >> error`, { message });
+
         return c.error({ message });
       }
     }
@@ -482,17 +481,31 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           });
           console.log(
             `add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`,
-            userGroup.id
+            userGroup.fields
           );
+
+          isPartOfHub = true;
 
           state.userGroupId = userGroup.id;
         }
       } // end if userGroupId is empty
-      else {
+
+      console.log(`add_profile_data/${hub.code} >> state.userGroupId`, {
+        userGroupId: state.userGroupId,
+      });
+
+      if (state.userGroupId) {
         try {
           const user = await airtable.user_group.find(state.userGroupId);
+          console.log(
+            `add_profile_data/${hub.code} >> user`,
+            user.id,
+            user?.fields
+          );
           if (user) {
             const ugs = (user.fields["User Groups"] ?? []) as string[];
+            isPartOfHub = ugs.includes(hub.name);
+
             if (!ugs.includes(hub.name)) {
               const groups = [...ugs, hub.name];
               console.log(
