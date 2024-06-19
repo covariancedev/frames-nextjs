@@ -1,6 +1,6 @@
 /** @jsxImportSource @airstack/frog/jsx */
 import { Box, Heading, Text, VStack, vars } from "@/utils/ui";
-import { Button, FrameIntent, Frog, TextInput } from "@airstack/frog";
+import { Button, type FrameIntent, Frog, TextInput } from "@airstack/frog";
 import {
   checkAllowList,
   getFarQuestUserDetails,
@@ -30,6 +30,7 @@ type State = {
 };
 
 const env = isDev ? "test" : "live";
+console.log(`Running in ${env} environment`);
 
 // type RedisFarcasterUser = Awaited<ReturnType<typeof getFcUser>>
 
@@ -78,15 +79,21 @@ app.frame("/apply/:hub", async (c) => {
           subtitle={`Sorry, the ${params.hub} hub cannot be found.`}
         />
       ),
-      intents: [<Button.Reset>Back</Button.Reset>],
+      intents: [<Button.Reset key="first">Back</Button.Reset>],
     });
   }
 
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub.code}/disclaimer.png`,
     intents: [
-      <Button action={`/about/${hub.code}`}>What is {hub.name}?</Button>,
-      <Button action={`/check_user_status/${hub.code}`} value="start">
+      <Button action={`/about/${hub.code}`} key="first">
+        What is {hub.name}?
+      </Button>,
+      <Button
+        action={`/check_user_status/${hub.code}`}
+        value="start"
+        key="start"
+      >
         Check Eligibilty
       </Button>,
     ],
@@ -107,15 +114,21 @@ app.frame("/about/:hub", async (c) => {
           subtitle={`Sorry, the ${params.hub} hub cannot be found.`}
         />
       ),
-      intents: [<Button.Reset>Back</Button.Reset>],
+      intents: [<Button.Reset key="first">Back</Button.Reset>],
     });
   }
 
   return c.res({
     image: `${config.baseUrl}/frame-slides/${hub.code}/about.png`,
     intents: [
-      <Button.Link href={hub.aboutUrl}>Read more</Button.Link>,
-      <Button action={`/check_user_status/${hub.code}`} value="start">
+      <Button.Link href={hub.aboutUrl} key="first">
+        Read more
+      </Button.Link>,
+      <Button
+        action={`/check_user_status/${hub.code}`}
+        value="start"
+        key="start"
+      >
         Check Eligibilty
       </Button>,
     ],
@@ -133,7 +146,7 @@ app.frame("/check_user_status/:hub", async (c) => {
           subtitle={`Sorry, the ${hub} hub cannot be found.`}
         />
       ),
-      intents: [<Button.Reset>Back</Button.Reset>],
+      intents: [<Button.Reset key="first">Back</Button.Reset>],
     });
   }
 
@@ -156,7 +169,7 @@ app.frame("/check_user_status/:hub", async (c) => {
     return c.res({
       image: (
         <ErrorImage
-          title={`Oops, something went wrong`}
+          title={"Oops, something went wrong"}
           subtitle="Send a DC to @lior or ping him in a cast for support"
         />
       ),
@@ -175,6 +188,14 @@ app.frame("/check_user_status/:hub", async (c) => {
     isAllowed = allowlist.isAllowed;
     state.whitelisted[hub.code] = isAllowed;
   }
+  const link = await redis.get<string>(`${env}_magiclink:user-${fid}`);
+  if (link) {
+    state.magicLink = link;
+    console.log(
+      `check_user_status >> Magic Link found in Redis for @${state.user.username}`,
+      state.magicLink
+    );
+  }
 
   // const name = <Text>{state.user.username}</Text>
 
@@ -184,13 +205,18 @@ app.frame("/check_user_status/:hub", async (c) => {
     }eligible.png`,
     intents: isAllowed
       ? [
-          <Button action={`/apply/${hub.code}`}>{"🔙"}</Button>,
-          <Button action={`/add_profile_data/${hub.code}/start`}>
+          <Button action={`/apply/${hub.code}`} key="first">
+            {"🔙"}
+          </Button>,
+          <Button action={`/add_profile_data/${hub.code}/start`} key="start">
             Create Profile
           </Button>,
         ]
       : [
-          <Button.Link href="https://app.covariance.network/registration">
+          <Button.Link
+            href="https://app.covariance.network/registration"
+            key="first"
+          >
             Apply via Website
           </Button.Link>,
         ],
@@ -208,7 +234,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           subtitle={`Sorry, the ${hub} hub cannot be found.`}
         />
       ),
-      intents: [<Button.Reset>Back</Button.Reset>],
+      intents: [<Button.Reset key="first">Back</Button.Reset>],
     });
   }
 
@@ -223,11 +249,13 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
   });
   const hubInfo = state.info[hub.code] as Record<string, unknown>;
 
+  console.log({ hubInfo, state });
+
   if (!frameData || !state.user) {
     return c.res({
       image: (
         <ErrorImage
-          title={`Oops, something went wrong`}
+          title={"Oops, something went wrong"}
           subtitle="Send a DC to @lior or ping him in a cast for support"
         />
       ),
@@ -256,8 +284,13 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       })
       .all();
 
+    console.log(
+      `add_profile_data/${hub.code} >> existingContributorFromFid`,
+      existingContributorFromFid.length
+    );
+
     const checkError = !["launch", "start"].includes(info);
-    let emailExists = false;
+    const emailExists = false;
     let magicLink: string | undefined = undefined;
     let image = "";
     console.log("checkError", { checkError, inputText });
@@ -265,6 +298,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
     const redisLink = await redis.get<string>(
       `${env}_magiclink:user-${frameData.fid}`
     );
+
     if (redisLink) {
       state.magicLink = redisLink;
       console.log(
@@ -273,66 +307,68 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       );
     }
 
-    checkExistingFarcasterUser: {
-      if (info === "start") {
-        if (existingContributorFromFid[0]) {
-          state.profileId = existingContributorFromFid[0].id;
-          const hubs = (existingContributorFromFid[0]?.fields.Hubs ??
-            []) as string[];
-          state.hubs.push(...hubs);
-          const foundInHub = hubs.find((h) => h.toLowerCase() === hub.id);
-          isPartOfHub = !!foundInHub;
-          const ugid = existingContributorFromFid[0]?.fields[
-            "User Groups"
-          ] as string[];
-          console.log(`existingContributorFromFid`, state.profileId, {
-            Hubs: hubs,
-            foundInHub,
-            "User Groups": ugid,
-            isPartOfHub,
-          });
-          const hasTg = existingContributorFromFid[0]?.fields?.Telegram
-            ? true
-            : false;
-          console.log(`hasTg`, hasTg);
-          if (ugid?.length > 0) {
-            const user = await airtable.user_group.find(ugid[0]);
+    if (info === "start") {
+      if (existingContributorFromFid[0]) {
+        state.profileId = existingContributorFromFid[0].id;
+        const hubs = (existingContributorFromFid[0]?.fields.Hubs ??
+          []) as string[];
+        state.hubs.push(...hubs);
+        const foundInHub = hubs.find((h) => h.toLowerCase() === hub.id);
+        isPartOfHub = !!foundInHub;
+        const ugid = existingContributorFromFid[0]?.fields[
+          "User Groups"
+        ] as string[];
+        console.log("existingContributorFromFid", state.profileId, {
+          Hubs: hubs,
+          foundInHub,
+          "User Groups": ugid,
+          isPartOfHub,
+        });
+        // biome-ignore lint/complexity/noUselessTernary: <explanation>
+        const hasTg = existingContributorFromFid[0]?.fields?.Telegram
+          ? true
+          : false;
+        console.log("hasTg", hasTg);
+        if (ugid?.length > 0) {
+          const user = await airtable.user_group.find(ugid[0]);
 
-            if (!user) {
-              console.log(`user group not found for ${hubInfo?.email}`, user);
-              break checkExistingFarcasterUser;
-            }
+          if (user) {
+            console.log("user group found", user.id, user.fields);
+
             state.userGroupId = user.id;
             hubInfo.name = hubInfo.name ?? (user.fields.Name as string);
             console.log(`user group for ${state.user.fid}`, user.fields.Name);
             // return c.error({ message: 'You are already here' })
             if (!hasTg) {
               info = "name";
-              break checkExistingFarcasterUser;
-            }
-            state.info[hub.code] = {
-              ...(state.info[hub.code] ?? {}),
-              telegram: existingContributorFromFid[0]?.fields?.Telegram,
-            };
-          } else {
-            // find user by email
-            const existingUserGroup = await airtable.user_group
-              .select({
-                filterByFormula: `{E-mail} = '${existingContributorFromFid[0].fields.Email}'`,
-                maxRecords: 1,
-              })
-              .all();
-            if (existingUserGroup.length > 0) {
-              const user = existingUserGroup[0];
-              state.userGroupId = user.id;
-              hubInfo.name = hubInfo.name ?? (user.fields.Name as string);
             } else {
-              break checkExistingFarcasterUser;
+              state.info[hub.code] = {
+                ...(state.info[hub.code] ?? {}),
+                telegram: existingContributorFromFid[0]?.fields?.Telegram,
+              };
             }
+          } else {
+            console.log(`user group not found for ${hubInfo?.email}`, user);
           }
-          info = "finished";
+        } else {
+          // find user by email
+          const existingUserGroup = await airtable.user_group
+            .select({
+              filterByFormula: `{E-mail} = '${existingContributorFromFid[0].fields.Email}'`,
+              maxRecords: 1,
+            })
+            .all();
+          if (existingUserGroup.length > 0) {
+            const user = existingUserGroup[0];
+            state.userGroupId = user.id;
+            hubInfo.name = hubInfo.name ?? (user.fields.Name as string);
+          }
         }
-        break checkExistingFarcasterUser;
+        info = "finished";
+      } else {
+        console.log(
+          `add_profile_data/${hub.code} >> existingContributorFromFid not found in the hub`
+        );
       }
     }
 
@@ -340,7 +376,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       if (checkError) {
         if (state.profileId) {
           console.log(
-            `Skipping error checking because User is an existing contributor`
+            "Skipping error checking because User is an existing contributor"
           );
           break checkingErrors;
         }
@@ -359,7 +395,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             const email = hubInfo.email as string;
 
             if (!email.includes("@")) {
-              message = `Invalid email address captured`;
+              message = "Invalid email address captured";
             } else {
               const existingUser = await airtable.user_group
                 .select({
@@ -397,7 +433,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 
       const fcUser = await getFcUser(state.user.username);
       const fcData = await checkFarcasterInfo(fcUser.fid);
-      state.hasFCUrl = fcData ? true : false;
+      state.hasFCUrl = !!fcData;
       console.log(
         `add_profile_data/${hub.code} >> hasFCUrl? ${state.hasFCUrl}`
       );
@@ -418,7 +454,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           );
           const userGroups = (user.fields["User Groups"] ?? []) as string[];
           const foundInUserGroup = userGroups.find((ug) => ug === hub.name);
-          hubInfo.name = hubInfo.name ?? user.fields["Name"];
+          hubInfo.name = hubInfo.name ?? user.fields.Name;
           if (!foundInUserGroup) {
             const newGroups = [...new Set<string>(userGroups), hub.name];
             console.log(
@@ -439,7 +475,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             `add_profile_data/${hub.code} >> Creating new user group for ${hubInfo?.email}`
           );
           const userGroup = await airtable.user_group.create({
-            Name: hubInfo.name as string,
+            Name: (hubInfo.name ?? hubInfo.finished) as string,
             "E-mail": hubInfo.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
             "User Groups": [hub.name],
@@ -514,6 +550,12 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         }
       }
 
+      console.log(
+        `add_profile_data/${hub.code} >> state.profileId`,
+        state.profileId,
+        { isPartOfHub, userGroupId: state.userGroupId }
+      );
+
       if (!isPartOfHub) {
         let telegramUsername = hubInfo?.telegram as string | undefined;
         // remove "@" from username
@@ -521,6 +563,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           ?.replace("@", "")
           .trim()
           .toLowerCase();
+
         if (state.profileId) {
           const hubs = [...new Set<string>([...state.hubs, hub.id])];
           console.log(
@@ -542,11 +585,12 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           );
         } else {
           console.log(
-            `add_profile_data/${hub.code} >> Creating new contributor for ${farcasterUrl}`
+            `add_profile_data/${hub.code} >> Creating new contributor for ${farcasterUrl}`,
+            { hubInfo }
           );
           const profile = await airtable.contributors.create(
             {
-              Name: hubInfo.name as string,
+              Name: (hubInfo.name ?? hubInfo.finished) as string,
               Email: hubInfo.email as string,
               Notes: fcUser.bio,
               ToS: true,
@@ -555,6 +599,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
               Source: ["Farcaster"],
               Hubs: [hub.id],
               "Referred by": "Lior Goldenberg",
+              "User Groups": [state.userGroupId],
               // @ts-ignore
               "Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
               "Invite Code": config.inviteCode,
@@ -570,54 +615,66 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
         }
       }
 
-      const user = state.user;
       const xstate = state;
-      addFarcasterInfo(fcUser, state.profileId!, state.hasFCUrl).then(() => {
-        console.log(
-          `add_profile_data/${hub.code} >> added farcaster info for ${farcasterUrl}`
-        );
-        console.log(
-          `add_profile_data/${hub.code} >> checking for magic link for ${hubInfo.email}`
-        );
-        let tries = 0;
-        if (hub.code === "coowncaster") {
-          while (true) {
-            tries++;
-            airtable.user_group
-              .find(state.userGroupId!)
-              .then(async (usergroup) => {
-                state.magicLink = usergroup?.fields["Magic Link"] as
-                  | string
-                  | undefined;
-                console.log(
-                  `add_profile_data/${hub.code} >> Magic Link found for @${state.user?.username}`,
-                  state.magicLink
-                );
-                const link = usergroup?.fields["Magic Link"] as
-                  | string
-                  | undefined;
-                if (link) {
-                  xstate.magicLink = link;
-                  redis
-                    .set(`${env}_magiclink:user-${frameData.fid}`, link)
-                    .then(() => {
-                      console.log(
-                        `add_profile_data/${hub.code} >> Magic Link saved to Redis for @${state.user?.username} on try #${tries}`
-                      );
-                    })
-                    .catch(console.error);
-                }
-              });
-            console.log(`add_profile_data/${hub.code} >> retrying...`);
-            if (tries > 5) break;
-          } // end while
+      addFarcasterInfo(fcUser, state.profileId!, state.hasFCUrl).then(
+        async () => {
           console.log(
-            `add_profile_data/${hub.code} >> xstate.magicLink`,
-            xstate.magicLink
+            `add_profile_data/${hub.code} >> added farcaster info for ${farcasterUrl}`,
+            { xstate }
           );
-          state.magicLink = xstate.magicLink;
-        } // end if hub.code === "coowncaster"
-      });
+          console.log(
+            `add_profile_data/${hub.code} >> checking for magic link for ${hubInfo.email}`
+          );
+          let tries = 0;
+          if (hub.code === "coowncaster") {
+            while (true) {
+              tries++;
+              airtable.user_group
+                .find(xstate.userGroupId ?? "")
+                .then(async (usergroup) => {
+                  console.log(
+                    `dd_profile_data/${hub.code} >> while #${tries}`,
+                    usergroup.id
+                  );
+                  xstate.magicLink = usergroup?.fields["Magic Link"] as
+                    | string
+                    | undefined;
+                  console.log(
+                    `aadd_profile_data/${hub.code} >> Magic Link found for @${state.user?.username}`,
+                    xstate.magicLink
+                  );
+                  const link = usergroup?.fields["Magic Link"] as
+                    | string
+                    | undefined;
+                  console.log(
+                    `add_profile_data/${hub.code} >> while link`,
+                    link
+                  );
+
+                  if (link) {
+                    xstate.magicLink = link;
+                    redis
+                      .set(`${env}_magiclink:user-${frameData.fid}`, link)
+                      .then(() => {
+                        console.log(
+                          `add_profile_data/${hub.code} >> Magic Link saved to Redis for @${state.user?.username} on try #${tries}`
+                        );
+                      })
+                      .catch(console.error);
+                  }
+                });
+              console.log(`add_profile_data/${hub.code} >> retrying...`);
+              if (tries > 5) break;
+            } // end while
+            console.log(
+              `add_profile_data/${hub.code} >> xstate.magicLink`,
+              xstate.magicLink
+            );
+            state.magicLink = xstate.magicLink;
+            state.profileId = xstate.profileId;
+          } // end if hub.code === "coowncaster"
+        }
+      );
     } else if (info === "launch") {
       if (hub.code === "coowncaster") {
         if (!state.magicLink) {
@@ -705,7 +762,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           previous = "email";
           label = "What's your telegram username?";
           image = "telegram";
-          sublabel = `We will use this to cross check your farcaster profile on Telegram`;
+          sublabel =
+            "We will use this to cross check your farcaster profile on Telegram";
           placeholder = "durov";
         }
         break;
@@ -756,11 +814,14 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
       } else {
         intents.push(
           ...[
-            <TextInput placeholder={placeholder} />,
-            <Button action={`/add_profile_data/${hub.code}/${previous}`}>
+            <TextInput placeholder={placeholder} key="text" />,
+            <Button
+              action={`/add_profile_data/${hub.code}/${previous}`}
+              key={"prev"}
+            >
               Back
             </Button>,
-            <Button action={`/add_profile_data/${hub.code}/${next}`}>
+            <Button action={`/add_profile_data/${hub.code}/${next}`} key="next">
               Next
             </Button>,
           ]

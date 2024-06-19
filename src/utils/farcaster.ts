@@ -1,14 +1,14 @@
 import config from "./config";
 import {
   createAllowList,
-  CreateAllowListInput,
-  CreateAllowListOutput,
+  type CreateAllowListInput,
+  type CreateAllowListOutput,
   TokenBlockchain,
   getFarcasterChannelParticipants,
-  FarcasterChannelParticipantsInput,
-  FarcasterChannelParticipantsOutput,
+  type FarcasterChannelParticipantsInput,
+  type FarcasterChannelParticipantsOutput,
   getFarcasterUserDetails,
-  FarcasterUserDetailsInput,
+  type FarcasterUserDetailsInput,
   FarcasterChannelActionType,
 } from "@airstack/frog";
 import { fetchFidsFromGists } from "./gists";
@@ -140,9 +140,6 @@ export async function getCovarianceUserAllowList(fid: number) {
 
 export async function getCoOwnCasterUserAllowedList(fid: number) {
   const allowListCriteria: CreateAllowListInput["allowListCriteria"] = {
-    // eventIds: [166577],
-    // numberOfFollowersOnFarcaster: 100,
-    // isFollowingOnFarcaster: [2602],
     tokens: [
       {
         // CoLaborator token
@@ -175,16 +172,6 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         chain: TokenBlockchain.Zora,
       },
       {
-        // FC Fall (Zora) /2
-        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
-        chain: TokenBlockchain.Zora,
-      },
-      {
-        // FC Holiday (Zora) /5
-        tokenAddress: "0xe2fb0e28d391ca747481b3f0dff906644416fac9",
-        chain: TokenBlockchain.Zora,
-      },
-      {
         // We are Farcaster  (Base)
         tokenAddress: "0x9da2b6a88625be110e6da0eb7ed106ac88f6211d",
         chain: TokenBlockchain.Base,
@@ -205,9 +192,9 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   const input: CreateAllowListInput = {
     fid,
     allowListCriteria,
-    isAllowedFunction: function (data) {
+    isAllowedFunction: (data) => {
       console.log(
-        `getCoOwnCasterUserAllowedList.isAllowedFunction >> data`,
+        "getCoOwnCasterUserAllowedList.isAllowedFunction >> data",
         data
       );
       const tokens = data.isTokensHold?.filter((t) => t.isHold);
@@ -223,7 +210,7 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
         }
       }
 
-      return tokens?.length ? true : false;
+      return !!tokens?.length;
     },
   };
 
@@ -231,11 +218,7 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
   console.log("getCoOwnCasterUserAllowedList >> result", result);
   const manualIds = await fetchFidsFromGists();
 
-  const isAllowed = manualIds.includes(fid)
-    ? true
-    : result.isAllowed
-    ? true
-    : false;
+  const isAllowed = manualIds.includes(fid) ? true : !!result.isAllowed;
 
   if (result.error) {
     console.error("getFarcasterUserAllowedList", result.error);
@@ -256,7 +239,7 @@ async function request<T>({
   method?: string;
 }) {
   path = `${FARQUEST_BASE_URL}/${path}`;
-  console.log("request for " + path);
+  console.log(`request for ${path}`);
 
   const response = await fetch(path, {
     headers: {
@@ -267,7 +250,7 @@ async function request<T>({
   });
 
   if (!response.ok) {
-    console.error("request for " + path, response.statusText);
+    console.error(`request for ${path}`, response.statusText);
 
     throw new Error(response.statusText);
   }
@@ -306,8 +289,9 @@ export async function getFarQuestUserDetails(id: string | number) {
         };
       };
     }>({
-      path:
-        `user${isNaN(Number(id)) ? "-by-username?username=" : "?fid="}` + id,
+      path: `user${
+        Number.isNaN(Number(id)) ? "-by-username?username=" : "?fid="
+      }${id}`,
     });
     return data.result.user;
   } catch (e) {
