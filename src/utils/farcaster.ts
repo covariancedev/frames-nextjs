@@ -11,6 +11,7 @@ import {
   FarcasterUserDetailsInput,
   FarcasterChannelActionType,
 } from "@airstack/frog";
+import { fetchFidsFromGists } from "./gists";
 
 export async function getAirstackUserDetails(id: string | number) {
   const fid = typeof id === "string" ? Number(id) : id;
@@ -228,18 +229,9 @@ export async function getCoOwnCasterUserAllowedList(fid: number) {
 
   const result: CreateAllowListOutput = await createAllowList(input);
   console.log("getCoOwnCasterUserAllowedList >> result", result);
-  const adminFids = Array.from(
-    JSON.parse(process.env.ADMIN_FIDS ?? "[]")
-  ) as number[];
+  const manualIds = await fetchFidsFromGists();
 
-  // Add ids here inside [] and separate by comma, eg: [12323,343]
-  const manualIds: number[] = [];
-
-  if (manualIds.length) {
-    adminFids.push(...manualIds);
-  }
-
-  const isAllowed = adminFids.includes(fid)
+  const isAllowed = manualIds.includes(fid)
     ? true
     : result.isAllowed
     ? true
