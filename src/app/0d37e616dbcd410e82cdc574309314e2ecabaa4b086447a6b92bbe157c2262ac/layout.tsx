@@ -1,17 +1,17 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { SidebarNav } from "./components/sidebar-nav";
 import { Separator } from "@/components/ui/separator";
-import { fidsFile } from "@/utils/gists";
 
 export const metadata: Metadata = {
   title: "Forms",
   description: "Advanced form example using react-hook-form and Zod.",
 };
+const id = "0d37e616dbcd410e82cdc574309314e2ecabaa4b086447a6b92bbe157c2262ac";
 
 const sidebarNavItems = [
   {
     title: "Manual Allow list",
-    href: `/${fidsFile.id}`,
+    href: `/${id}`,
   },
   //   {
   //     title: "Account",

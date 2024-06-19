@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { LoaderIcon, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchFidsFromGists, updateFidsToGists } from "@/utils/gists";
+import { fetchFids, updateFids } from "./actions";
 import { ToastAction } from "@/components/ui/toast";
 import { useEffect, useState } from "react";
 
@@ -44,7 +44,7 @@ export function ManualAllowListForm() {
   // Queries
   const query = useQuery({
     queryKey: ["manual_fids"],
-    queryFn: () => fetchFidsFromGists(),
+    queryFn: () => fetchFids(),
   });
 
   const form = useForm<ProfileFormValues>({
@@ -60,7 +60,7 @@ export function ManualAllowListForm() {
   // Mutations
   const update = useMutation({
     mutationFn: ({ old, fids }: { old: number[]; fids: number[] }) => {
-      return updateFidsToGists({ old, fids });
+      return updateFids({ old, fids });
     },
     onSettled: async (data, error) => {
       if (error) {
@@ -94,7 +94,7 @@ export function ManualAllowListForm() {
 
       form.setValue("fids", fids);
     }
-  }, [query.isLoading, query.data]);
+  }, [query.isLoading, query.data, form.setValue]);
 
   if (query.isLoading) {
     return (
