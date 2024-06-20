@@ -480,7 +480,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             Name: (hubInfo.name ?? hubInfo.finished) as string,
             "E-mail": hubInfo.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
-            // "User Groups": [hub.name],
+            "User Groups": [hub.name],
           });
           console.log(
             `add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`,
