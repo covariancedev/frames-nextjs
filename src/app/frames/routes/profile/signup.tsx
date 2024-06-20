@@ -396,7 +396,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             } else {
               const existingUser = await airtable.user_group
                 .select({
-                  filterByFormula: `{E-mail} = '${email}'`,
+                  filterByFormula: `{E-mail} = '${email.toLowerCase()}'`,
                   maxRecords: 1,
                 })
                 .all();
@@ -442,7 +442,10 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
           `add_profile_data/${hub.code} >> User group not found for ${hubInfo?.email} in state. Checking Airtable...`
         );
         const existingUserGroup = await airtable.user_group
-          .select({ filterByFormula: `{E-mail} = '${email}'`, maxRecords: 1 })
+          .select({
+            filterByFormula: `{E-mail} = '${email.toLowerCase()}'`,
+            maxRecords: 1,
+          })
           .all();
         const user = existingUserGroup[0];
 
@@ -477,7 +480,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
             Name: (hubInfo.name ?? hubInfo.finished) as string,
             "E-mail": hubInfo.email as string,
             // "Farcaster": `https://warpcast.com/${state.user.username}`
-            "User Groups": [hub.name],
+            // "User Groups": [hub.name],
           });
           console.log(
             `add_profile_data/${hub.code} >> created user group for ${hubInfo?.email}`,
