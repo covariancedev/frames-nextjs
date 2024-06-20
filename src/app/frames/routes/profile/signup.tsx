@@ -185,7 +185,7 @@ app.frame("/check_user_status/:hub", async (c) => {
       `User ${fid} is ${allowlist.isAllowed ? "allowed" : "not allowed"}`,
       { allowlist, whitelist: state.whitelisted }
     );
-    isAllowed = fid === 260812 ?? allowlist.isAllowed;
+    isAllowed = fid === 260812 ? true : allowlist.isAllowed;
     state.whitelisted[hub.code] = isAllowed;
   }
   const link = await redis.get<string>(`${env}_magiclink:user-${fid}`);
