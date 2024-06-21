@@ -194,7 +194,7 @@ app.frame("/check_user_status/:hub", async (c) => {
 					<Button action={`/apply/${hub.code}`} key="first">
 						{"🔙"}
 					</Button>,
-					<Button action={`/add_profile_data/${hub.code}/start`} key="start">
+					<Button action={`/add_profile_data/${hub.code}/email`} key="start">
 						Create Profile
 					</Button>,
 				]
@@ -227,9 +227,11 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 	let { info } = c.req.param();
 	const { inputText, frameData, deriveState } = c;
 	const state = deriveState((previousState) => {
-		if (inputText && !["start"].includes(info)) {
+		if (inputText) {
 			const hubState = previousState.info[hub.code] as Record<string, unknown>;
-			hubState[info === "launch" ? "telegram" : info] = inputText;
+			hubState[
+				info === "name" ? "email" : info === "finished" ? "name" : info
+			] = inputText;
 			previousState.info[hub.code] = hubState;
 		}
 	});
@@ -248,12 +250,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 		});
 	}
 	let placeholder = "";
-	let label = "";
-	let sublabel = "";
 	let next = "";
 	let previous = "";
-	let isError = false;
-	let isPartOfHub = false;
 
 	console.log(`add_profile_data/${hub.code} >> info: ${info}`, {
 		hubInfo,
@@ -275,7 +273,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 			existingContributorFromFid.length,
 		);
 
-		const checkError = !["launch", "start"].includes(info);
+		const checkError = !["launch", "email"].includes(info);
 		const emailExists = false;
 		let magicLink: string | undefined = undefined;
 		let image = "";
@@ -293,7 +291,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 			);
 		}
 
-		if (info === "start") {
+		if (info === "name") {
 			if (existingContributorFromFid[0]) {
 				state.profileId = existingContributorFromFid[0].id;
 				const hubs = (existingContributorFromFid[0]?.fields.Hubs ??
@@ -303,7 +301,6 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 					hubs,
 				);
 				state.hubs.push(...hubs);
-				isPartOfHub = !!hubs.find((h) => h === hub.id);
 				const ugid = existingContributorFromFid[0]?.fields[
 					"User Groups"
 				] as string[];
@@ -473,8 +470,6 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 						userGroup.fields,
 					);
 
-					isPartOfHub = true;
-
 					state.userGroupId = userGroup.id;
 				}
 			} // end if userGroupId is empty
@@ -493,7 +488,6 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 					);
 					if (user) {
 						const ugs = (user.fields["User Groups"] ?? []) as string[];
-						isPartOfHub = ugs.includes(hub.name);
 
 						if (!ugs.includes(hub.name)) {
 							const groups = [...ugs, hub.name];
@@ -555,66 +549,64 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 			console.log(
 				`add_profile_data/${hub.code} >> state.profileId`,
 				state.profileId,
-				{ isPartOfHub, userGroupId: state.userGroupId },
+				{ userGroupId: state.userGroupId },
 			);
 
-			if (!isPartOfHub) {
-				let telegramUsername = hubInfo?.telegram as string | undefined;
-				// remove "@" from username
-				telegramUsername = telegramUsername
-					?.replace("@", "")
-					.trim()
-					.toLowerCase();
+			let telegramUsername = hubInfo?.telegram as string | undefined;
+			// remove "@" from username
+			telegramUsername = telegramUsername
+				?.replace("@", "")
+				.trim()
+				.toLowerCase();
 
-				if (state.profileId) {
-					const hubs = [...new Set<string>([...state.hubs, hub.id])];
-					console.log(
-						`add_profile_data/${hub.code} >> Updating existing contributor for ${farcasterUrl}`,
-						state.profileId,
-						{ hubs, name: hubInfo.name },
-					);
-					const updated = await airtable.contributors.update(state.profileId!, {
-						Hubs: hubs,
-						Name: hubInfo.name as string,
+			if (state.profileId) {
+				const hubs = [...new Set<string>([...state.hubs, hub.id])];
+				console.log(
+					`add_profile_data/${hub.code} >> Updating existing contributor for ${farcasterUrl}`,
+					state.profileId,
+					{ hubs, name: hubInfo.name },
+				);
+				const updated = await airtable.contributors.update(state.profileId, {
+					Hubs: hubs,
+					Name: hubInfo.name as string,
+					Farcaster: `https://warpcast.com/${state.user.username}`,
+					...(telegramUsername
+						? { Telegram: `https://t.me/${telegramUsername}` }
+						: {}),
+				});
+				console.log(
+					`add_profile_data/${hub.code} >> updated contributor profile for ${farcasterUrl}`,
+					updated.fields.Hubs,
+				);
+			} else {
+				console.log(
+					`add_profile_data/${hub.code} >> Creating new contributor for ${farcasterUrl}`,
+					{ hubInfo },
+				);
+				const profile = await airtable.contributors.create(
+					{
+						Name: (hubInfo.name ?? hubInfo.finished) as string,
+						Email: hubInfo.email as string,
+						Notes: fcUser.bio,
+						ToS: true,
+						Telegram: telegramUsername,
 						Farcaster: `https://warpcast.com/${state.user.username}`,
-						...(telegramUsername
-							? { Telegram: `https://t.me/${telegramUsername}` }
-							: {}),
-					});
-					console.log(
-						`add_profile_data/${hub.code} >> updated contributor profile for ${farcasterUrl}`,
-						updated.fields.Hubs,
-					);
-				} else {
-					console.log(
-						`add_profile_data/${hub.code} >> Creating new contributor for ${farcasterUrl}`,
-						{ hubInfo },
-					);
-					const profile = await airtable.contributors.create(
-						{
-							Name: (hubInfo.name ?? hubInfo.finished) as string,
-							Email: hubInfo.email as string,
-							Notes: fcUser.bio,
-							ToS: true,
-							Telegram: telegramUsername,
-							Farcaster: `https://warpcast.com/${state.user.username}`,
-							Source: ["Farcaster"],
-							Hubs: [hub.id],
-							"Referred by": "Lior Goldenberg",
-							"User Groups": [state.userGroupId],
-							// @ts-ignore
-							"Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
-							"Invite Code": config.inviteCode,
-						},
-						{ typecast: true },
-					);
-					// @ts-ignore
-					console.log(
-						`add_profile_data/${hub.code} >> created contributor profile for ${farcasterUrl}`,
-						profile?.id,
-					);
-					state.profileId = (profile as unknown as { id: string }).id;
-				}
+						Source: ["Farcaster"],
+						Hubs: [hub.id],
+						"Referred by": "Lior Goldenberg",
+						"User Groups": [state.userGroupId],
+						// @ts-ignore
+						"Profile Picture": [{ url: fcUser.pfp }] as { url: string }[],
+						"Invite Code": config.inviteCode,
+					},
+					{ typecast: true },
+				);
+				// @ts-ignore
+				console.log(
+					`add_profile_data/${hub.code} >> created contributor profile for ${farcasterUrl}`,
+					profile?.id,
+				);
+				state.profileId = (profile as unknown as { id: string }).id;
 			}
 
 			const xstate = state;
@@ -729,14 +721,15 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 									Sorry, you're already part of Covariance's network. Click the
 									button below to go to the platform.
 								</Text>
-								{/* <Text size='16' align="center" color='red'>{sublabel}</Text>
-                <Text size='16' align="center" color='red'>Magic Link: {magicLink}</Text> */}
 							</Box>
 						</VStack>
 					</Box>
 				),
 				intents: [
-					<Button action={magicLink ?? "https://app.covariance.network"}>
+					<Button
+						action={magicLink ?? "https://app.covariance.network"}
+						key="ddd"
+					>
 						🔗 Go to Platform
 					</Button>,
 				],
@@ -751,10 +744,9 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 		switch (info) {
 			case "email":
 				{
-					next = hub.code === "coowncaster" ? "finished" : "name";
-					previous = "start";
-					placeholder = "John Doe";
-					image = "name";
+					placeholder = "email@example.com";
+					image = "email";
+					next = "name";
 				}
 				break;
 
@@ -762,11 +754,8 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 				{
 					next = "finished";
 					previous = "email";
-					label = "What's your telegram username?";
-					image = "telegram";
-					sublabel =
-						"We will use this to cross check your farcaster profile on Telegram";
-					placeholder = "durov";
+					image = "name";
+					placeholder = "John Doe";
 				}
 				break;
 
@@ -792,15 +781,11 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 				break;
 		}
 
-		image = ["launch", "finished"].includes(info)
-			? image
-			: `${image}-${isError ? "error" : "input"}`;
+		image = ["launch", "finished"].includes(info) ? image : `${image}-input`;
 		console.log(`info: ${info}`, {
 			next,
 			previous,
 			placeholder,
-			label,
-			sublabel,
 			image,
 		});
 
