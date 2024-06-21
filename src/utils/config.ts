@@ -6,6 +6,7 @@ type Hub = {
   code: "covariance" | "coowncaster";
   aboutUrl: string;
   website: string;
+  groupChat: string;
 };
 
 export default {
@@ -25,7 +26,7 @@ export default {
   },
   baseUrl:
     process.env.NODE_ENV === "production"
-      ? `https://covariance-api.vercel.app`
+      ? "https://covariance-api.vercel.app"
       : "http://localhost:3000",
   aboutUrl: "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
   hubs: [
@@ -36,6 +37,7 @@ export default {
       aboutUrl:
         "https://paragraph.xyz/@0xcovariance.eth/introducing-covariance",
       website: "https://app.covariance.network",
+      groupChat: "https://t.me/CovarianceBot",
     },
     {
       name: "CoOwnCaster",
@@ -44,6 +46,7 @@ export default {
       aboutUrl:
         "https://paragraph.xyz/@0xcovariance.eth/coowncaster-an-experiment-in-co-ownership",
       website: "https://app.covariance.network/coowncaster",
+      groupChat: "https://warpcast.com/~/group/Gmb_KhNulZh326RMdTpa2g",
     },
   ] as Hub[],
 };
