@@ -648,7 +648,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 
 			case "name":
 				{
-					next = "launch";
+					next = "finished";
 					previous = "email";
 					placeholder = "John Doe";
 					image = "name";
@@ -663,7 +663,7 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 				break;
 		}
 
-		image = ["launch", "finished"].includes(info) ? image : `${image}-input`;
+		image = ["finished"].includes(info) ? image : `${image}-input`;
 		console.log(`info: ${info}`, {
 			next,
 			previous,
@@ -672,6 +672,37 @@ app.frame("/add_profile_data/:hub/:info", async (c) => {
 		});
 
 		const intents: FrameIntent[] = [];
+
+		if (info !== "finished") {
+			intents.push(
+				...[
+					<TextInput placeholder={placeholder} key="text" />,
+					<Button
+						action={`/add_profile_data/${hub.code}/${previous}`}
+						key={"prev"}
+					>
+						Back
+					</Button>,
+					<Button action={`/add_profile_data/${hub.code}/${next}`} key="next">
+						Next
+					</Button>,
+				],
+			);
+		} else {
+			if (hub.code === "coowncaster") {
+				intents.push(
+					<Button.Link href={`${hub.groupChat}`}>Join Group Chat</Button.Link>,
+				);
+			} else {
+				intents.push(
+					<Button.Link
+						href={`${hub.groupChat}?start=magiclink_${state.userGroupId}`}
+					>
+						Launch Telegram Bot 🤖
+					</Button.Link>,
+				);
+			}
+		}
 
 		if (info === "launch") {
 			if (hub.code === "coowncaster") {
