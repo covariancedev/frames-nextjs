@@ -14,23 +14,8 @@ const nextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: "/allow-lists",
-        destination:
-          "/0d37e616dbcd410e82cdc574309314e2ecabaa4b086447a6b92bbe157c2262ac",
-        permanent: true,
-      },
-    ];
-  },
   experimental: {
-    serverComponentsExternalPackages: [
-      "@resvg/resvg-js",
-      "airtable",
-      "@olli/kvdex",
-      "@deno/kv",
-    ],
+    serverComponentsExternalPackages: ["@resvg/resvg-js", "airtable"],
     instrumentationHook: true,
   },
   webpack: (config) => {
